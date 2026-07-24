@@ -1,0 +1,8 @@
+Основной каркас - это либо работы с осеннего хакатона, либо мои собственные наработки.
+частично использовал следующие репозитории, то есть брал оттуда идеи (гитхаб):
+
+https://github.com/DJWOMS/fastapi_base
+https://github.com/FastAPI-MEA/fastapi-template
+https://github.com/fastapi-users/fastapi-users
+https://github.com/radomirbrkovic/fast-kit
+https://github.com/artemonsh/fastapi-onion-architecture

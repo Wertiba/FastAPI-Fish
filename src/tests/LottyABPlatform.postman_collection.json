@@ -1,0 +1,961 @@
+{
+  "info": {
+    "_postman_id": "efda6ea6-e55c-4f3c-8388-c16740e2cfaf",
+    "name": "LottyABPlatform",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "37976101"
+  },
+  "item": [
+    {
+      "name": "ping Copy",
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base}}ping",
+          "host": [
+            "{{base}}ping"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "http://127.0.0.1:8080/api/v1/health",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base}}health",
+          "host": [
+            "{{base}}health"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "http://127.0.0.1:8080/api/v1/ready",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base}}ready",
+          "host": [
+            "{{base}}ready"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "get users Copy",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base}}users",
+          "host": [
+            "{{base}}users"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "login Copy",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "    {\"email\": \"admin@mail.ru\",\r\n    \"password\": \"123123123aA!\"\r\n    }",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base}}auth/login",
+          "host": [
+            "{{base}}auth"
+          ],
+          "path": [
+            "login"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "users/me Copy",
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base}}users/me",
+          "host": [
+            "{{base}}users"
+          ],
+          "path": [
+            "me"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "users/{id} Copy",
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base}}users/9e6b94dc-eb15-475b-ad25-44417a7ba3cf",
+          "host": [
+            "{{base}}users"
+          ],
+          "path": [
+            "9e6b94dc-eb15-475b-ad25-44417a7ba3cf"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "delete user Copy",
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{base}}users/9e6b94dc-eb15-475b-ad25-44417a7ba3cf",
+          "host": [
+            "{{base}}users"
+          ],
+          "path": [
+            "9e6b94dc-eb15-475b-ad25-44417a7ba3cf"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "update me Copy",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"fullName\": \"Александр Шахов\",\n  \"isActive\": true,\n  \"roles\": [\"ADMN\", \"EXPR\", \"APPR\"],\n  \"required\": 1\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base}}users/me",
+          "host": [
+            "{{base}}users"
+          ],
+          "path": [
+            "me"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "update current user Copy",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"fullName\": \"Иван Иванов\",\n  \"isActive\": true\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base}}users/9e6b94dc-eb15-475b-ad25-44417a7ba3cf",
+          "host": [
+            "{{base}}users"
+          ],
+          "path": [
+            "9e6b94dc-eb15-475b-ad25-44417a7ba3cf"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "admin register users Copy",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"ivan@example1226.com\",\n  \"password\": \"123123123aA!\",\n  \"fullName\": \"Новый пользователь\",\n  \"required\": 50,\n  \"isActive\": false,\n  \"roles\": [\"APPR\"]\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base}}users",
+          "host": [
+            "{{base}}users"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Flag create",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"code\": \"ABC\",\n  \"default\": \"any value\",\n  \"type\": \"STRING\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base}}flags",
+          "host": [
+            "{{base}}flags"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "http://127.0.0.1:8080/api/v1/flags",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base}}flags",
+          "host": [
+            "{{base}}flags"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "http://127.0.0.1:8080/api/v1/flags/6449e7b6-6d91-4af2-ac32-34d24de03819",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base}}flags/ABC",
+          "host": [
+            "{{base}}flags"
+          ],
+          "path": [
+            "ABC"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "http://127.0.0.1:8080/api/v1/flags/6449e7b6-6d91-4af2-ac32-34d24de03819",
+      "request": {
+        "method": "PATCH",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"default\": \"other_value\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base}}flags/ABC",
+          "host": [
+            "{{base}}flags"
+          ],
+          "path": [
+            "ABC"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "http://127.0.0.1:8080/api/v1/metric-catalog",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base}}metric-catalog",
+          "host": [
+            "{{base}}metric-catalog"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "http://127.0.0.1:8080/api/v1/metric-catalog",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"code\": \"M1\",\r\n  \"name\": \"m1\",\r\n  \"type\": \"SUM\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base}}metric-catalog",
+          "host": [
+            "{{base}}metric-catalog"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "{{base}}metric-catalog/M1",
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base}}metric-catalog/M1",
+          "host": [
+            "{{base}}metric-catalog"
+          ],
+          "path": [
+            "M1"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "http://127.0.0.1:8080/api/v1/event-catalog",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"code\": \"E1\",\r\n  \"name\": \"some_event\",\r\n  \"description\": \"string\",\r\n  \"requiredParams\": {\r\n    \"additionalProp1\": {}\r\n  },\r\n  \"requiresExposure\": true\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base}}event-catalog",
+          "host": [
+            "{{base}}event-catalog"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "http://127.0.0.1:8080/api/v1/event-catalog",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base}}event-catalog",
+          "host": [
+            "{{base}}event-catalog"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "http://127.0.0.1:8080/api/v1/event-catalog/A",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base}}event-catalog/E1",
+          "host": [
+            "{{base}}event-catalog"
+          ],
+          "path": [
+            "E1"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "http://127.0.0.1:8080/api/v1/metric-catalog/assign",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"metricCatalog_code\": \"M1\",\r\n  \"items\": [\r\n    {\r\n      \"eventCatalog_code\": \"E1\"\r\n    }\r\n  ]\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base}}metric-catalog/assign",
+          "host": [
+            "{{base}}metric-catalog"
+          ],
+          "path": [
+            "assign"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "http://127.0.0.1:8080/api/v1/experiments",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"code\": \"exp_checkout_button_color1\",\r\n  \"flag_code\": \"ABC\",\r\n  \"name\": \"Checkout Button Color Experiment\",\r\n  \"part\": 100,\r\n  \"target\": \"all_users\",\r\n  \"description\": \"A/B тест цвета кнопки оформления заказа\",\r\n  \"variants\": [\r\n    {\r\n      \"name\": \"Control\",\r\n      \"value\": \"blue\",\r\n      \"weight\": 75,\r\n      \"isControl\": true\r\n    },\r\n    {\r\n      \"name\": \"Variant A\",\r\n      \"value\": \"green\",\r\n      \"weight\": 25,\r\n      \"isControl\": false\r\n    }\r\n  ],\r\n  \"metrics\": [\r\n    {\r\n      \"metricCatalog_code\": \"IMPRESSIONS\",\r\n      \"role\": \"GUARDRAIL\",\r\n      \"threshold\": 3,\r\n      \"action_code\": \"PAUSE\"\r\n    },\r\n        {\r\n      \"metricCatalog_code\": \"CONVERSIONS\",\r\n      \"role\": \"MAIN\"\r\n    },\r\n    {\r\n        \"metricCatalog_code\": \"M1\",\r\n        \"role\": \"ADDITIONAL\"\r\n    }\r\n  ]\r\n}\r\n",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base}}experiments",
+          "host": [
+            "{{base}}experiments"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "http://127.0.0.1:8080/api/v1/users/approvers",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"experimenter_id\": \"9e6b94dc-eb15-475b-ad25-44417a7ba3cf\",\r\n  \"approver_id\": \"9e6b94dc-eb15-475b-ad25-44417a7ba3cf\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base}}users/approvers",
+          "host": [
+            "{{base}}users"
+          ],
+          "path": [
+            "approvers"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "http://127.0.0.1:8080/api/v1/users/approvers/84e1f041-e764-444f-a266-2b9e01add8fa",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base}}users/approvers/e78c115c-28c0-495b-95d1-d81bc852fd33",
+          "host": [
+            "{{base}}users"
+          ],
+          "path": [
+            "approvers",
+            "e78c115c-28c0-495b-95d1-d81bc852fd33"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "http://127.0.0.1:8080/api/v1/users/approvers/3214b7fa-4e4e-4f4a-8187-ee5afc70e9c0",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{base}}users/approvers/e78c115c-28c0-495b-95d1-d81bc852fd33",
+          "host": [
+            "{{base}}users"
+          ],
+          "path": [
+            "approvers",
+            "e78c115c-28c0-495b-95d1-d81bc852fd33"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "http://127.0.0.1:8080/api/v1/experiments/",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base}}experiments",
+          "host": [
+            "{{base}}experiments"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "http://127.0.0.1:8080/api/v1/experiments/c18453f2-8442-48d9-8bbe-b5f3ade923ad",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base}}experiments/exp_checkout_button_color12?version=1.0",
+          "host": [
+            "{{base}}experiments"
+          ],
+          "path": [
+            "exp_checkout_button_color12"
+          ],
+          "query": [
+            {
+              "key": "version",
+              "value": "1.0"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "http://127.0.0.1:8080/api/v1/experiments/history/exp_checkout_button_color",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base}}experiments/history/exp_checkout_button_color12",
+          "host": [
+            "{{base}}experiments"
+          ],
+          "path": [
+            "history",
+            "exp_checkout_button_color12"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "http://127.0.0.1:8080/api/v1/experiments/status/review",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"code\": \"exp_checkout_button_color12\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base}}experiments/status/review",
+          "host": [
+            "{{base}}experiments"
+          ],
+          "path": [
+            "status",
+            "review"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "http://127.0.0.1:8080/api/v1/reviews",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"experiment_code\": \"exp_checkout_button_color12\",\r\n  \"result\": \"APPROVED\",\r\n  \"comment\": \"string\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base}}reviews",
+          "host": [
+            "{{base}}reviews"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "http://127.0.0.1:8080/api/v1/reviews/677195b1-0474-41c9-a973-73e8147a858a",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base}}reviews/6b92ecdf-7eb4-41d3-a3e7-2964982770c5",
+          "host": [
+            "{{base}}reviews"
+          ],
+          "path": [
+            "6b92ecdf-7eb4-41d3-a3e7-2964982770c5"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "http://127.0.0.1:8080/api/v1/reviews/all/exp_checkout_button_color",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base}}reviews/all/exp_checkout_button_color12",
+          "host": [
+            "{{base}}reviews"
+          ],
+          "path": [
+            "all",
+            "exp_checkout_button_color12"
+          ],
+          "query": [
+            {
+              "key": "version",
+              "value": "1.1",
+              "disabled": true
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "http://127.0.0.1:8080/api/v1/experiments/status/stop-review",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"code\": \"exp_checkout_button_color12\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base}}experiments/status/stop-review",
+          "host": [
+            "{{base}}experiments"
+          ],
+          "path": [
+            "status",
+            "stop-review"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "{{base}}experiments/status/draft",
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"code\": \"exp_checkout_button_color12\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base}}experiments/status/draft",
+          "host": [
+            "{{base}}experiments"
+          ],
+          "path": [
+            "status",
+            "draft"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "http://127.0.0.1:8080/api/v1/experiments/exp_checkout_button_color1",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"part\": 50,\r\n  \"name\": \"New Checkout Experiment\",\r\n  \"description\": \"A/B test for new checkout flow\",\r\n  \"target\": \"users_from_eu\",\r\n  \"code\": \"checkout_ab_test\",\r\n  \"flag_code\": \"checkout_flag\",\r\n  \"version\": 1.6,\r\n  \"variants\": [\r\n    {\r\n      \"name\": \"control\",\r\n      \"value\": \"old_checkout\",\r\n      \"weight\": 5,\r\n      \"isControl\": true\r\n    },\r\n    {\r\n      \"name\": \"variant_a\",\r\n      \"value\": \"new_checkout_v1\",\r\n      \"weight\": 25,\r\n      \"isControl\": false\r\n    },\r\n    {\r\n      \"name\": \"variant_b\",\r\n      \"value\": \"new_checkout_v2\",\r\n      \"weight\": 20,\r\n      \"isControl\": false\r\n    }\r\n  ],\r\n  \"metrics\": [\r\n    {\r\n      \"metricCatalog_code\": \"IMPRESSIONS\",\r\n      \"role\": \"GUARDRAIL\",\r\n      \"threshold\": 3,\r\n      \"action_code\": \"PAUSE\"\r\n    },\r\n        {\r\n      \"metricCatalog_code\": \"CONVERSIONS\",\r\n      \"role\": \"MAIN\"\r\n    },\r\n    {\r\n        \"metricCatalog_code\": \"M1\",\r\n        \"role\": \"ADDITIONAL\"\r\n    }\r\n  ]\r\n}\r\n",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base}}experiments/exp_checkout_button_color12",
+          "host": [
+            "{{base}}experiments"
+          ],
+          "path": [
+            "exp_checkout_button_color12"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "http://127.0.0.1:8080/api/v1/events",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"events\": [\r\n    {\r\n      \"eventKey\": \"SomeKey4115\",\r\n      \"decision_id\": \"0ad16f64-1c03-4e6e-b59b-2d0925383270\",\r\n      \"eventCatalog_code\": \"EXPOSURE\",\r\n      \"data\": {\r\n        \"additionalProp1\": {}\r\n      }\r\n    }\r\n  ]\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base}}events",
+          "host": [
+            "{{base}}events"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "http://127.0.0.1:8080/api/v1/experiments/status/running",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"code\": \"exp_checkout_button_color12\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base}}experiments/status/running",
+          "host": [
+            "{{base}}experiments"
+          ],
+          "path": [
+            "status",
+            "running"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "http://127.0.0.1:8080/api/v1/decisions",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"user_id\": \"9e6b94dc-eb15-475b-ad25-44417a7ba3cf\",\r\n  \"attributes\": {\r\n    \"country\": \"string\",\r\n    \"app_version\": \"string\",\r\n    \"platform\": \"string\",\r\n    \"screen\": \"string\"\r\n  },\r\n  \"flag_codes\": [\r\n    \"ABC\"\r\n  ]\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base}}decisions",
+          "host": [
+            "{{base}}decisions"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "http://127.0.0.1:8080/api/v1/experiments/status/paused",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"code\": \"exp_checkout_button_color12\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base}}experiments/status/paused",
+          "host": [
+            "{{base}}experiments"
+          ],
+          "path": [
+            "status",
+            "paused"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "http://127.0.0.1:8080/api/v1/experiments/status/completed",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"code\": \"exp_checkout_button_color12\",\r\n    \"result\": \"ROLLOUT\",\r\n    \"comment\": \"some_comment\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base}}experiments/status/completed",
+          "host": [
+            "{{base}}experiments"
+          ],
+          "path": [
+            "status",
+            "completed"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "http://127.0.0.1:8080/api/v1/experiments/status/archived",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"code\": \"exp_checkout_button_color12\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base}}experiments/status/archived",
+          "host": [
+            "{{base}}experiments"
+          ],
+          "path": [
+            "status",
+            "archived"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "http://127.0.0.1:8080/api/v1/reports/none",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base}}reports/exp_checkout_button_color12?time_from=2026-01-19T14:30:00&time_to=2026-02-25T14:30:00",
+          "host": [
+            "{{base}}reports"
+          ],
+          "path": [
+            "exp_checkout_button_color12"
+          ],
+          "query": [
+            {
+              "key": "time_from",
+              "value": "2026-01-19T14:30:00"
+            },
+            {
+              "key": "time_to",
+              "value": "2026-02-25T14:30:00"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "http://127.0.0.1:8080/api/v1/experiments/guardrails/exp_checkout_button_color1",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base}}experiments/guardrails/exp_checkout_button_color12",
+          "host": [
+            "{{base}}experiments"
+          ],
+          "path": [
+            "guardrails",
+            "exp_checkout_button_color12"
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}

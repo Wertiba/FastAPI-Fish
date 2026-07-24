@@ -1,0 +1,17 @@
+# Зависимости для запуска тестов
+# Установка: pip install -r requirements-test.txt
+
+# Тестовый стек
+pytest==8.3.5
+pytest-asyncio==0.24.0
+anyio==4.6.0
+httpx==0.28.1
+
+# In-memory БД (вместо PostgreSQL)
+aiosqlite==0.20.0
+
+# Покрытие
+pytest-cov==5.0.0
+
+# Уже входят в основной requirements.txt:
+# fastapi, sqlmodel, sqlalchemy, passlib, argon2-cffi, pyjwt, pydantic, loguru
