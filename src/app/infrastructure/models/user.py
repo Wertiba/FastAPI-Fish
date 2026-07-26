@@ -15,7 +15,7 @@ class User(SQLModel, table=True):
     password: str = Field(nullable=False)
     fullName: str = Field(nullable=False)
     isActive: bool = Field(default=True)
-    roles: list[UserRole] = Field(default=[UserRole.USER])
+    role: UserRole = Field(default=UserRole.USER)
     createdBy: uuid.UUID | None = Field(default=None, foreign_key="users.id", index=True)
 
     createdAt: datetime = Field(default_factory=datetime.now)

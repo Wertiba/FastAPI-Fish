@@ -7,7 +7,7 @@ from sqlalchemy.orm import selectinload
 from sqlmodel import select, update
 
 from app.core.exceptions.base import RepositoryError
-from app.infrastructure.models import User, UserRole
+from app.infrastructure.models import User
 from app.infrastructure.repositories import BaseRepository
 
 
@@ -30,19 +30,6 @@ class UserRepository(BaseRepository[User]):
 
         return user
 
-    async def set_roles(self, user_id: UUID, role_ids: list[UUID]) -> None:
-        statement = select(UserRole).where(UserRole.user_id == user_id) # noqa
-        result = await self.session.execute(statement)
-        old_roles = result.scalars().all()
-        for old_role in old_roles:
-            await self.session.delete(old_role)
-
-        for role_id in role_ids:
-            user_role = UserRole(user_id=user_id, role_id=role_id)
-            self.session.add(user_role)
-
-        await self.session.commit()
-
     async def update(self, user_id: UUID, data: dict) -> User | None:
         data["updatedAt"] = datetime.now(timezone.utc)
         stmt = update(User).where(User.id == user_id).values(**data).returning(User)    # noqa
@@ -50,8 +37,6 @@ class UserRepository(BaseRepository[User]):
         try:
             result = await self.session.execute(stmt)
             user = result.scalar_one_or_none()
-            if user:
-                await self.session.refresh(user, ["roles"])
             return user
         except SQLAlchemyError as e:
             raise RepositoryError("Database error") from e

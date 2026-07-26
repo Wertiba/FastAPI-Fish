@@ -17,10 +17,8 @@ class UserRole(str, Enum):
 
 class UserUpdateBody(PyModel):
     fullName: Annotated[str, Field(min_length=2, max_length=200)]
-    roles: list[UserRole] | None = None
+    role: UserRole | None = None
     isActive: bool | None = None
-
-    required: Annotated[int | None, Field(ge=0)] = None
 
 
 class UserCreateBody(UserUpdateBody):
@@ -38,17 +36,16 @@ class UserData(PyModel):
     id: UUID
     email: EmailStr
     fullName: str
-    roles: list[UserRole] | None
+    role: UserRole | None
     isActive: bool
-
-    required: int | None
 
     createdAt: datetime
     updatedAt: datetime
+    createdBy: UUID
 
 
 class UserReadResponse(UserData, DatetimeResponse):
-    roles: list[UserRole] | None
+    pass
 
 
 class UserWithTokenResponse(Token, DatetimeResponse):
@@ -57,15 +54,3 @@ class UserWithTokenResponse(Token, DatetimeResponse):
 
 class TokenData(UserData):
     token_type: str | None
-
-
-class ApproverAssignBody(PyModel):
-    experimenter_id: UUID
-    approver_id: UUID
-
-
-class ApproverReadResponse(ApproverAssignBody, DatetimeResponse):
-    id: UUID
-    isActive: bool
-    addedAt: datetime
-    addedBy: UUID
