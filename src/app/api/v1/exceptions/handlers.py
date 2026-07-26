@@ -8,7 +8,7 @@ from app.api.v1.exceptions import APIException
 from app.api.v1.exceptions.exc_map import DOMAIN_TO_API
 from app.core.exceptions.user_exs import EntityError
 from app.core.schemas.responses import FieldError, ValidationErrorResponse
-from app.core.utils import loc_to_field, now_iso_z
+from app.core.utils import loc_to_field
 from app.core.utils.loc2field import priority, rejected_value
 
 

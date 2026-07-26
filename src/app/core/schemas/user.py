@@ -1,18 +1,23 @@
 from datetime import datetime
+from enum import Enum
 from typing import Annotated
 from uuid import UUID
 
 from pydantic import AfterValidator, EmailStr, Field
 
 from app.core.schemas.base import DatetimeResponse, PyModel
-from app.core.schemas.role import RoleCode, RoleRead
 from app.core.schemas.token import Token
 from app.core.utils import check_len_password
 
 
+class UserRole(str, Enum):
+    ADMN = "ADMN"
+    USER = "USER"
+
+
 class UserUpdateBody(PyModel):
     fullName: Annotated[str, Field(min_length=2, max_length=200)]
-    roles: list[RoleCode] | None = None
+    roles: list[UserRole] | None = None
     isActive: bool | None = None
 
     required: Annotated[int | None, Field(ge=0)] = None
@@ -33,7 +38,7 @@ class UserData(PyModel):
     id: UUID
     email: EmailStr
     fullName: str
-    roles: list[RoleCode] | None
+    roles: list[UserRole] | None
     isActive: bool
 
     required: int | None
@@ -43,7 +48,7 @@ class UserData(PyModel):
 
 
 class UserReadResponse(UserData, DatetimeResponse):
-    roles: list[RoleRead] | None
+    roles: list[UserRole] | None
 
 
 class UserWithTokenResponse(Token, DatetimeResponse):
