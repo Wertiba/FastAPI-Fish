@@ -1,14 +1,8 @@
 from datetime import UTC, datetime
 from uuid import UUID
 
-from app.core.exceptions.user_exs import (
-    ForbiddenError,
-    UserAlreadyExistsError,
-    UserNotFoundError,
-)
+from app.core.exceptions.user_exs import UserNotFoundError
 from app.core.schemas.user import (
-    TokenData,
-    UserCreateBody,
     UserReadResponse,
     UserRole,
     UserUpdateBody,
@@ -31,16 +25,6 @@ class UserService:
     @staticmethod
     def _is_admin(role: UserRole) -> bool:
         return role == UserRole.ADMN
-
-    async def register(self, user_data: UserCreateBody) -> UserReadResponse:
-        async with self.uow:
-            existing_user = await self.uow.user_repo.get_by_email(user_data.email)
-            if existing_user:
-                raise UserAlreadyExistsError
-
-            user_data.password = self.jwt_service.get_password_hash(user_data.password)
-            user = await self.uow.user_repo.add(User(**user_data.model_dump()))
-            return self._convert_to_response(user)
 
     async def get_all_users(self, pagination: PaginationParams) -> Page[UserReadResponse]:
         async with self.uow:

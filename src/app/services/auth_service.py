@@ -4,11 +4,12 @@ from uuid import UUID
 from app.core.exceptions.user_exs import (
     InvalidCredentialsError,
     InvalidPasswordError,
+    UserAlreadyExistsError,
     UserNotActiveError,
     UserNotFoundError,
 )
 from app.core.schemas.token import Token
-from app.core.schemas.user import TokenData, UserLoginBody, UserReadResponse, UserWithTokenResponse
+from app.core.schemas.user import TokenData, UserCreateBody, UserLoginBody, UserReadResponse, UserWithTokenResponse
 from app.infrastructure.models import User
 from app.infrastructure.unit_of_work import UnitOfWork
 
@@ -47,6 +48,16 @@ class AuthService:
                 **user.model_dump(),
                 token_type=payload.get("token_type"),
             )
+
+    async def register(self, user_data: UserCreateBody) -> UserReadResponse:
+        async with self.uow:
+            existing_user = await self.uow.user_repo.get_by_email(user_data.email)
+            if existing_user:
+                raise UserAlreadyExistsError
+
+            user_data.password = self.jwt_service.get_password_hash(user_data.password)
+            user = await self.uow.user_repo.add(User(**user_data.model_dump()))
+            return UserReadResponse(user)
 
     async def login_user(self, login_body: UserLoginBody) -> UserWithTokenResponse:
         async with self.uow:
