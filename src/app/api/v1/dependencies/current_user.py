@@ -22,8 +22,8 @@ async def get_current_user(request: Request, auth_service: AuthServiceDep) -> To
 CurrentUserDep = Annotated[TokenData, Depends(get_current_user)]
 
 
-def _user_has_role(user: TokenData, role_code: UserRole) -> bool:
-    return role_code in user.roles
+def _user_has_role(user: TokenData, role: UserRole) -> bool:
+    return role == user.role
 
 
 async def get_admin_user(current_user: CurrentUserDep) -> TokenData:  # noqa: RUF029
@@ -32,25 +32,11 @@ async def get_admin_user(current_user: CurrentUserDep) -> TokenData:  # noqa: RU
     return current_user
 
 
-async def get_experimenter_user(current_user: CurrentUserDep) -> TokenData:  # noqa: RUF029
-    if not _user_has_role(current_user, UserRole.EXPR):
-        raise ForbiddenError
-    return current_user
-
-
-async def get_approver_user(current_user: CurrentUserDep) -> TokenData:  # noqa: RUF029
-    if not _user_has_role(current_user, UserRole.APPR):
-        raise ForbiddenError
-    return current_user
-
-
 async def get_any_view(current_user: CurrentUserDep) -> TokenData:  # noqa: RUF029
-    if not any([_user_has_role(current_user, r) for r in [UserRole.ADMN, UserRole.EXPR, UserRole.APPR, UserRole.VIEW]]):
+    if not any([_user_has_role(current_user, r) for r in [UserRole.ADMN]]):
         raise ForbiddenError
     return current_user
 
 
 AdminUserDep = Annotated[TokenData, Depends(get_admin_user)]
-ExperimenterUserDep = Annotated[TokenData, Depends(get_experimenter_user)]
-ApproverUserDep = Annotated[TokenData, Depends(get_approver_user)]
 AnyViewUserDep = Annotated[TokenData, Depends(get_any_view)]

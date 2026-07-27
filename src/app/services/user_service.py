@@ -57,28 +57,14 @@ class UserService:
 
             return self._convert_to_response(user_exists)
 
-    async def deactivate(self, user_id: UUID) -> None:
+    async def deactivate_by_id(self, user_id: UUID) -> None:
         async with self.uow:
             await self.get_by_id(user_id)
             return await self.uow.user_repo.deactivate(user_id, isActive=False, updatedAt=datetime.now(tz=UTC))
 
-    async def update(self, user_id: UUID, new_data: UserUpdateBody) -> UserReadResponse:
+    async def update_by_id(self, user_id: UUID, new_data: UserUpdateBody) -> UserReadResponse:
         async with self.uow:
             await self.uow.user_repo.get_by_id(user_id)
 
-            updated_user = await self.uow.user_repo.update(user_id, new_data)
+            updated_user = await self.uow.user_repo.update(user_id, new_data.model_dump())
             return self._convert_to_response(updated_user)
-
-    async def update_me(self, user_data: TokenData, new_data: UserUpdateBody) -> UserReadResponse:
-        return await self.update(user_data.id, user_data.roles, new_data)
-
-    async def update_current(
-            self, user_id: UUID, user_data: TokenData, new_data: UserUpdateBody
-    ) -> UserReadResponse:
-        is_admin = self._is_admin(user_data.roles)
-
-        if not is_admin and user_id != user_data.id:
-            raise ForbiddenError
-
-        await self.get_by_id(user_id)
-        return await self.update(user_id, user_data.roles, new_data)

@@ -7,7 +7,6 @@ from app.core.exceptions.user_exs import (
     UserNotActiveError,
     UserNotFoundError,
 )
-from app.core.schemas.role import RoleCode, RoleRead
 from app.core.schemas.token import Token
 from app.core.schemas.user import TokenData, UserLoginBody, UserReadResponse, UserWithTokenResponse
 from app.infrastructure.models import User
@@ -45,9 +44,8 @@ class AuthService:
             if not user:
                 raise InvalidCredentialsError
             return TokenData(
-                **user.model_dump(exclude={"roles"}),
+                **user.model_dump(),
                 token_type=payload.get("token_type"),
-                roles=[r.code for r in user.roles]
             )
 
     async def login_user(self, login_body: UserLoginBody) -> UserWithTokenResponse:
@@ -56,17 +54,6 @@ class AuthService:
             tokens = self._create_tokens_for_user(user)
 
             return UserWithTokenResponse(
-                user=UserReadResponse(
-                    roles=[
-                        RoleRead(
-                            id=role.id,
-                            code=RoleCode(role.code),
-                            value=role.value,
-                            description=role.description,
-                        )
-                        for role in user.roles
-                    ],
-                    **user.model_dump(exclude={"roles"}),
-                ),
+                user=UserReadResponse(**user.model_dump()),
                 **tokens.model_dump(),
             )
