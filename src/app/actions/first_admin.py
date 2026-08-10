@@ -1,10 +1,10 @@
-from passlib.hash import argon2
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlmodel import select
+from passlib.hash import argon2
 
 from app.core.config import settings
+from app.core.enums import UserRole
 from app.core.logger import Logger
-from app.core.schemas.user import UserRole
 from app.infrastructure.models.user import User
 
 
@@ -12,7 +12,7 @@ async def create_admin(session: AsyncSession):
     email = settings.ADMIN_EMAIL
     logger = Logger().get_logger()
 
-    stmt = select(User).where(User.email == email)  # noqa
+    stmt = select(User).where(User.email == email)
     result = await session.execute(stmt)
     admin = result.scalar_one_or_none()
 
@@ -23,8 +23,9 @@ async def create_admin(session: AsyncSession):
     new_admin = User(
         email=email,
         password=argon2.hash(settings.ADMIN_PASSWORD),
-        fullName=settings.ADMIN_FULLNAME,
+        full_name=settings.ADMIN_FULLNAME,
         role=UserRole.ADMIN,
+        is_active=True,
     )
     session.add(new_admin)
 

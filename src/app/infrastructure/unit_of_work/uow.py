@@ -3,18 +3,20 @@ from typing import Self
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.infrastructure.repositories import UserRepository
+from app.infrastructure.repositories import RefreshTokenRepository, UserRepository
 from app.infrastructure.unit_of_work.abstract_uow import AbstractUnitOfWork
 
 
 class UnitOfWork(AbstractUnitOfWork):
     user_repo: UserRepository
+    refresh_token_repo: RefreshTokenRepository
 
     def __init__(self, session: AsyncSession) -> None:
         self.session = session
 
     async def __aenter__(self) -> Self:
         self.user_repo = UserRepository(self.session)
+        self.refresh_token_repo = RefreshTokenRepository(self.session)
         return self
 
     async def __aexit__(

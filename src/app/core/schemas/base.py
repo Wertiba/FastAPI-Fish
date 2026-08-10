@@ -1,10 +1,9 @@
 from datetime import datetime, timezone
 
-from pydantic import field_serializer
-from sqlmodel import SQLModel
+from pydantic import BaseModel, field_serializer
 
 
-class PyModel(SQLModel):
+class PyModel(BaseModel):
     pass
 
 
