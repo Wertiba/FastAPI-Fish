@@ -15,7 +15,7 @@ router = APIRouter(prefix="/users", tags=["Users"])
 
 
 @router.get("", response_model=Page[UserReadResponse], status_code=status.HTTP_200_OK)
-async def get_all(_: AdminUserDep, user_service: UserServiceDep, pagination: PaginationDep) -> Page[User]:
+async def get_all(_: AdminUserDep, user_service: UserServiceDep, pagination: PaginationDep) -> Page[UserReadResponse]:
     return await user_service.get_all_users(pagination)
 
 
