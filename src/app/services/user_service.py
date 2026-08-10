@@ -24,7 +24,7 @@ class UserService:
 
     @staticmethod
     def _is_admin(role: UserRole) -> bool:
-        return role == UserRole.ADMN
+        return role == UserRole.ADMIN
 
     async def get_all_users(self, pagination: PaginationParams) -> Page[UserReadResponse]:
         async with self.uow:

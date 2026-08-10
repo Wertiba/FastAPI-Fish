@@ -27,13 +27,13 @@ def _user_has_role(user: TokenData, role: UserRole) -> bool:
 
 
 async def get_admin_user(current_user: CurrentUserDep) -> TokenData:  # noqa: RUF029
-    if not _user_has_role(current_user, UserRole.ADMN):
+    if not _user_has_role(current_user, UserRole.ADMIN):
         raise ForbiddenError
     return current_user
 
 
 async def get_any_view(current_user: CurrentUserDep) -> TokenData:  # noqa: RUF029
-    if not any([_user_has_role(current_user, r) for r in [UserRole.ADMN]]):
+    if not any([_user_has_role(current_user, r) for r in [UserRole.ADMIN]]):
         raise ForbiddenError
     return current_user
 

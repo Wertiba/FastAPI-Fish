@@ -11,7 +11,7 @@ from app.core.utils import check_len_password
 
 
 class UserRole(str, Enum):
-    ADMN = "ADMN"
+    ADMIN = "ADMIN"
     USER = "USER"
 
 
