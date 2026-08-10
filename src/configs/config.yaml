@@ -1,5 +1,5 @@
 app:
-  name: NoteManager
+  name: FastAPI-Fish
 
 run:
   host: 0.0.0.0
@@ -12,7 +12,6 @@ logging:
     backtrace: true
     diagnose: true
     format: "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> | <level>{message}</level>"
-
   file:
     path: logs/app.log
     rotation: 10 MB
@@ -26,12 +25,10 @@ logging:
 token:
   default_type: bearer
   schema: argon2
-
   access_token:
     lifetime_seconds: 3600
     algorithm: HS256
     expire_minutes: 120
-
   refresh_token:
     expire_days: 15
 
@@ -41,24 +38,3 @@ db:
   echo_pool: false
   pool_size: 50
   max_overflow: 10
-
-cache:
-  db: 0
-  response_cache:
-    prefix: fastapi-cache
-    namespace:
-      all_users: all-users
-
-    ttl:
-      all_users: 2
-
-  entity_cache:
-    ttl:
-      user_by_login: 300
-
-restrictions:
-  max_password_length: 8
-
-exp_index:
-  coefficient: 0.5
-  term: 10

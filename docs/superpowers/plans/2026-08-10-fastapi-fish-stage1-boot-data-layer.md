@@ -33,7 +33,7 @@
 - Delete: `src/tests/pytest.ini`
 - Create: `src/pytest.ini`
 - Modify: `src/requirements.txt` (full rewrite, UTF-8)
-- Modify: `configs/config.yaml` (full rewrite)
+- Modify: `src/configs/config.yaml` (full rewrite — this is the path `app/core/config.py`'s `CONFIG_FILE` actually resolves to; there is no root-level `configs/` in this repo)
 - Test: `src/tests/test_repo_hygiene.py`
 
 **Interfaces:**
@@ -149,7 +149,7 @@ with open("src/requirements.txt", "w", encoding="utf-8", newline="\n") as f:
 
 Run this as a one-off Python snippet (or write the file directly with a text editor set to UTF-8 — just do not reuse the old UTF-16LE file).
 
-- [ ] **Step 4: Rewrite `configs/config.yaml`**
+- [ ] **Step 4: Rewrite `src/configs/config.yaml`** (NOT a root-level `configs/`; `app/core/config.py`'s `BASE_DIR` resolves to `src/`, so `src/configs/config.yaml` is the file the app actually loads)
 
 Remove the `cache`, `restrictions`, and `exp_index` blocks (unused remnants of an unrelated project — grepping `src/app` confirms no code reads `settings.cache`, `settings.restrictions`, or `settings.exp_index`), and fix `app.name`:
 
@@ -220,7 +220,7 @@ def test_requirements_txt_is_utf8_and_pruned():
 
 
 def test_config_yaml_has_no_unrelated_project_cruft():
-    text = (REPO_ROOT / "configs" / "config.yaml").read_text(encoding="utf-8")
+    text = (REPO_ROOT / "src" / "configs" / "config.yaml").read_text(encoding="utf-8")
     assert "NoteManager" not in text
     assert "exp_index" not in text
     assert "restrictions" not in text

@@ -19,7 +19,7 @@ def test_requirements_txt_is_utf8_and_pruned():
 
 
 def test_config_yaml_has_no_unrelated_project_cruft():
-    text = (REPO_ROOT / "configs" / "config.yaml").read_text(encoding="utf-8")
+    text = (REPO_ROOT / "src" / "configs" / "config.yaml").read_text(encoding="utf-8")
     assert "NoteManager" not in text
     assert "exp_index" not in text
     assert "restrictions" not in text
