@@ -24,7 +24,7 @@ async def create_admin(session: AsyncSession):
         email=email,
         password=argon2.hash(settings.ADMIN_PASSWORD),
         fullName=settings.ADMIN_FULLNAME,
-        role=UserRole.ADMN,
+        role=UserRole.ADMIN,
     )
     session.add(new_admin)
 
