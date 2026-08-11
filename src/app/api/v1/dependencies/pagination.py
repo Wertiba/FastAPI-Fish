@@ -7,7 +7,7 @@ from app.core.utils.paginated import PaginationParams
 
 def get_pagination(
     page: int = Query(0, ge=0, description="Page number"),
-    size: int = Query(10, ge=1, le=1000, description="Page size"),
+    size: int = Query(20, ge=1, le=100, description="Page size"),
 ) -> PaginationParams:
     return PaginationParams(page=page, size=size)
 
