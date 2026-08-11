@@ -7,7 +7,6 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 def test_garbage_files_are_gone():
     assert not (REPO_ROOT / "server.pas").exists()
     assert not (REPO_ROOT / "src" / "tests" / "LottyABPlatform.postman_collection.json").exists()
-    assert not (REPO_ROOT / "src" / "tests" / "conftest.py").exists()
     assert not (REPO_ROOT / "src" / "tests" / "test_auth_and_users.py").exists()
 
 

@@ -1,6 +1,7 @@
-from .cookies import delete_auth_cookies, set_auth_cookies
+from .cookies import REFRESH_COOKIE_NAME, delete_refresh_cookie, set_refresh_cookie
 
 __all__ = [
-    "delete_auth_cookies",
-    "set_auth_cookies",
+    "REFRESH_COOKIE_NAME",
+    "delete_refresh_cookie",
+    "set_refresh_cookie",
 ]

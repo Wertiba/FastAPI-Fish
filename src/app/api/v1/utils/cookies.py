@@ -1,21 +1,27 @@
 from fastapi import Response
 
-from app.core.schemas.token import Token
+from app.core.config import settings
+
+REFRESH_COOKIE_NAME = "refreshToken"
 
 
-def set_auth_cookies(response: Response, tokens: Token | None = None, access_token: str | None = None) -> None:
-    if not access_token and not tokens:
-        raise ValueError("Either access_token or tokens must be provided")
-
+def set_refresh_cookie(response: Response, refresh_token: str, max_age_seconds: int) -> None:
     response.set_cookie(
-        key="access_token",
-        value=access_token or tokens.accessToken,  # type: ignore[arg-type]
+        key=REFRESH_COOKIE_NAME,
+        value=refresh_token,
+        max_age=max_age_seconds,
         httponly=True,
-        path="/",
+        secure=bool(settings.APP_COOKIE_SECURE),
         samesite="lax",
-        # secure=True,  # for https  # noqa: ERA001
+        path="/",
     )
 
 
-def delete_auth_cookies(response: Response) -> None:
-    response.delete_cookie(key="access_token", path="/")
+def delete_refresh_cookie(response: Response) -> None:
+    response.delete_cookie(
+        key=REFRESH_COOKIE_NAME,
+        path="/",
+        httponly=True,
+        secure=bool(settings.APP_COOKIE_SECURE),
+        samesite="lax",
+    )
