@@ -1,4 +1,4 @@
-from typing import Generic
+from typing import Any, Generic
 from uuid import UUID
 
 from sqlalchemy import func, select, update
@@ -7,10 +7,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.custom_types import T
 from app.core.exceptions.base import DuplicateError, RepositoryError
-from app.core.schemas.base import PyModel
 
 
-class BaseRepository(Generic[T]):  # noqa
+class BaseRepository(Generic[T]):
     def __init__(self, session: AsyncSession, model: type[T]) -> None:
         self.session = session
         self.model = model
@@ -26,18 +25,18 @@ class BaseRepository(Generic[T]):  # noqa
         except SQLAlchemyError as e:
             raise RepositoryError("Database error") from e
 
-    async def deactivate(self, id_: UUID, **values) -> None:
-        stmt = update(self.model).where(self.model.id == id_).values(**values)  # noqa
+    async def deactivate(self, id_: UUID, **values: Any) -> None:
+        stmt = update(self.model).where(self.model.id == id_).values(**values)
         try:
             await self.session.execute(stmt)
         except SQLAlchemyError as e:
             raise RepositoryError("Database error") from e
 
-    async def update(self, id_: UUID, new_data: PyModel) -> T | None:
+    async def update(self, id_: UUID, new_data: dict[str, Any]) -> T | None:
         stmt = (
             update(self.model)
-            .where(self.model.id == id_)    # noqa
-            .values(**new_data.model_dump(exclude_unset=True))
+            .where(self.model.id == id_)
+            .values(**new_data)
             .returning(self.model)
         )
         try:
@@ -48,7 +47,7 @@ class BaseRepository(Generic[T]):  # noqa
 
     async def get_by_id(self, id_: UUID) -> T | None:
         try:
-            stmt = select(self.model).where(self.model.id == id_)  # type: ignore[attr-defined]
+            stmt = select(self.model).where(self.model.id == id_)
             res = await self.session.execute(stmt)
             return res.scalar_one_or_none()
         except SQLAlchemyError as e:
