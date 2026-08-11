@@ -1,3 +1,4 @@
+from .datetime_utils import as_aware_utc
 from .duration import parse_duration_seconds
 from .loc2field import loc_to_field
 from .paginated import Page, PaginationParams
@@ -9,6 +10,7 @@ __all__ = [
     "Page",
     "PaginationParams",
     "Singleton",
+    "as_aware_utc",
     "check_len_password",
     "loc_to_field",
     "now_iso_z",

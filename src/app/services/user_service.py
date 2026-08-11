@@ -2,6 +2,7 @@ from datetime import UTC, datetime
 from uuid import UUID
 
 from app.core.enums import UserRole
+from app.core.exceptions.base import DuplicateError
 from app.core.exceptions.user_exs import ForbiddenError, UserAlreadyExistsError, UserNotFoundError
 from app.core.schemas.user import (
     AdminRegisterUserBody,
@@ -55,15 +56,18 @@ class UserService:
                 raise UserAlreadyExistsError
 
             hashed_password = self.jwt_service.get_password_hash(data.password)
-            user = await self.uow.user_repo.add(
-                User(
-                    email=data.email,
-                    password=hashed_password,
-                    full_name=data.fullName,
-                    role=data.role,
-                    is_active=data.isActive,
+            try:
+                user = await self.uow.user_repo.add(
+                    User(
+                        email=data.email,
+                        password=hashed_password,
+                        full_name=data.fullName,
+                        role=data.role,
+                        is_active=data.isActive,
+                    )
                 )
-            )
+            except DuplicateError:
+                raise UserAlreadyExistsError from None
             user = await self.uow.user_repo.update(user.id, {"created_by": user.id})
             return self._to_read_response(user)
 

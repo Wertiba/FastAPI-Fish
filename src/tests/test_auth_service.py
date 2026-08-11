@@ -3,9 +3,7 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 from app.core.exceptions.user_exs import (
     InvalidCredentialsError,
-    InvalidPasswordError,
     UserAlreadyExistsError,
-    UserNotFoundError,
 )
 from app.core.schemas.user import UserLoginBody, UserRegisterBody
 from app.infrastructure.models import Base
@@ -75,14 +73,17 @@ async def test_login_with_wrong_password_raises(session_factory):
 
     async with session_factory() as session:
         service = _auth_service(session)
-        with pytest.raises(InvalidPasswordError):
+        with pytest.raises(InvalidCredentialsError):
             await service.login_user(UserLoginBody(email="wrongpw@fish.io", password="wrong-password"))
 
 
 async def test_login_with_unknown_email_raises(session_factory):
     async with session_factory() as session:
         service = _auth_service(session)
-        with pytest.raises(UserNotFoundError):
+        # Unknown email must raise the SAME exception as a wrong password
+        # (InvalidCredentialsError) rather than a distinguishable
+        # UserNotFoundError, to avoid account-enumeration via response status.
+        with pytest.raises(InvalidCredentialsError):
             await service.login_user(UserLoginBody(email="ghost@fish.io", password="password1"))
 
 

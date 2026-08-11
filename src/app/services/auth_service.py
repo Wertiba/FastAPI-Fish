@@ -2,29 +2,28 @@ from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
 from app.core.enums import UserRole
+from app.core.exceptions.base import DuplicateError
 from app.core.exceptions.user_exs import (
     InvalidCredentialsError,
-    InvalidPasswordError,
     UserAlreadyExistsError,
     UserNotActiveError,
-    UserNotFoundError,
 )
 from app.core.schemas.token import AccessTokenResponse
 from app.core.schemas.user import UserAndAccessTokenResponse, UserData, UserLoginBody, UserReadResponse, UserRegisterBody
+from app.core.utils import as_aware_utc
 from app.infrastructure.models import RefreshToken, User
 from app.infrastructure.unit_of_work import UnitOfWork
 from app.services.jwt_service import ACCESS_TOKEN_TYPE, REFRESH_TOKEN_TYPE, JWTService
 
+# Lazily-computed hash of a fixed dummy password, verified against on the
+# unknown-email login path so it takes roughly as long as the wrong-password
+# path (avoids a timing oracle that would let a caller distinguish "no such
+# user" from "wrong password" by response latency).
+_DUMMY_PASSWORD_HASH: str | None = None
+
 
 def _expiry(seconds: int) -> datetime:
     return datetime.now(UTC) + timedelta(seconds=seconds)
-
-
-def _as_aware_utc(value: datetime) -> datetime:
-    # SQLite (aiosqlite) round-trips TIMESTAMP(timezone=True) columns as naive
-    # datetimes even though the value was written as UTC-aware; Postgres preserves
-    # tzinfo. Normalize so comparisons against datetime.now(UTC) work on both backends.
-    return value if value.tzinfo is not None else value.replace(tzinfo=UTC)
 
 
 class AuthService:
@@ -48,9 +47,17 @@ class AuthService:
     async def _authenticate_user(self, email: str, password: str) -> User:
         user = await self.uow.user_repo.get_by_email(email)
         if user is None:
-            raise UserNotFoundError
+            # Verify against a dummy hash so this path takes roughly the same
+            # time as the wrong-password path below, and raise the same
+            # exception as a wrong password so callers can't enumerate emails
+            # by response status or timing.
+            global _DUMMY_PASSWORD_HASH
+            if _DUMMY_PASSWORD_HASH is None:
+                _DUMMY_PASSWORD_HASH = self.jwt_service.get_password_hash("dummy-password-for-timing")
+            self.jwt_service.verify_password(password, _DUMMY_PASSWORD_HASH)
+            raise InvalidCredentialsError
         if not self.jwt_service.verify_password(password, str(user.password)):
-            raise InvalidPasswordError
+            raise InvalidCredentialsError
         if not user.is_active:
             raise UserNotActiveError
         return user
@@ -82,15 +89,18 @@ class AuthService:
                 raise UserAlreadyExistsError
 
             hashed_password = self.jwt_service.get_password_hash(user_data.password)
-            user = await self.uow.user_repo.add(
-                User(
-                    email=user_data.email,
-                    password=hashed_password,
-                    full_name=user_data.fullName,
-                    role=UserRole.USER,
-                    is_active=True,
+            try:
+                user = await self.uow.user_repo.add(
+                    User(
+                        email=user_data.email,
+                        password=hashed_password,
+                        full_name=user_data.fullName,
+                        role=UserRole.USER,
+                        is_active=True,
+                    )
                 )
-            )
+            except DuplicateError:
+                raise UserAlreadyExistsError from None
             user = await self.uow.user_repo.update(user.id, {"created_by": user.id})
             return await self._issue_token_pair(user)
 
@@ -106,7 +116,7 @@ class AuthService:
             hashed = self.jwt_service.hash_token(raw_refresh_token)
 
             stored = await self.uow.refresh_token_repo.get_by_user_and_hash(user_id, hashed)
-            if stored is None or _as_aware_utc(stored.expires_at) < datetime.now(UTC):
+            if stored is None or as_aware_utc(stored.expires_at) < datetime.now(UTC):
                 raise InvalidCredentialsError
 
             user = await self.uow.user_repo.get_by_id(user_id)
