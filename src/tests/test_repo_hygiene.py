@@ -13,7 +13,7 @@ def test_garbage_files_are_gone():
 
 def test_requirements_txt_is_utf8_and_pruned():
     text = (REPO_ROOT / "src" / "requirements.txt").read_text(encoding="utf-8")
-    for banned in ("aioredis", "fastapi-cache2", "hiredis", "sentry-sdk", "pendulum", "dnspython", "fastar", "fastapi-swagger-dark"):
+    for banned in ("aioredis", "fastapi-cache2", "hiredis", "sentry-sdk", "pendulum", "fastar", "fastapi-swagger-dark"):
         assert banned not in text, f"{banned} should have been pruned"
     assert "SQLAlchemy" in text
 

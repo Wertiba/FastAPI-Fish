@@ -1,6 +1,6 @@
+from passlib.hash import argon2
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from passlib.hash import argon2
 
 from app.core.config import settings
 from app.core.enums import UserRole

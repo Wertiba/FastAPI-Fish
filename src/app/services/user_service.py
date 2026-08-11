@@ -20,7 +20,16 @@ class UserService:
 
     @staticmethod
     def _convert_to_response(user: User) -> UserReadResponse:
-        return UserReadResponse(**user.model_dump())
+        return UserReadResponse(
+            id=user.id,
+            email=user.email,
+            fullName=user.full_name,
+            role=user.role,
+            isActive=user.is_active,
+            createdAt=user.created_at,
+            updatedAt=user.updated_at,
+            createdBy=user.created_by,
+        )
 
     @staticmethod
     def _is_admin(role: UserRole) -> bool:
@@ -44,11 +53,16 @@ class UserService:
     async def deactivate_by_id(self, user_id: UUID) -> None:
         async with self.uow:
             await self.get_by_id(user_id)
-            return await self.uow.user_repo.deactivate(user_id, isActive=False, updatedAt=datetime.now(tz=UTC))
+            return await self.uow.user_repo.deactivate(user_id, is_active=False, updated_at=datetime.now(tz=UTC))
 
     async def update_by_id(self, user_id: UUID, new_data: UserUpdateBody) -> UserReadResponse:
         async with self.uow:
             await self.uow.user_repo.get_by_id(user_id)
 
-            updated_user = await self.uow.user_repo.update(user_id, new_data.model_dump())
+            data = {
+                "full_name": new_data.fullName,
+                "role": new_data.role,
+                "is_active": new_data.isActive,
+            }
+            updated_user = await self.uow.user_repo.update(user_id, data)
             return self._convert_to_response(updated_user)

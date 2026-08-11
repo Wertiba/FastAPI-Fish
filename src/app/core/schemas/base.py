@@ -1,10 +1,10 @@
 from datetime import datetime, timezone
 
-from pydantic import BaseModel, field_serializer
+from pydantic import BaseModel, ConfigDict, field_serializer
 
 
 class PyModel(BaseModel):
-    pass
+    model_config = ConfigDict(from_attributes=True)
 
 
 class DatetimeResponse(PyModel):
