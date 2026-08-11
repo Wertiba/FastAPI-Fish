@@ -5,6 +5,7 @@ from .services import (
     UserServiceDep,
 )
 from .session import SessionDep
+from .user_filters import UserFilterDep
 from .uow import UnitOfWorkDep
 
 __all__ = [
@@ -15,5 +16,6 @@ __all__ = [
     "PaginationDep",
     "SessionDep",
     "UnitOfWorkDep",
+    "UserFilterDep",
     "UserServiceDep",
 ]

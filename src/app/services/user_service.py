@@ -1,10 +1,13 @@
 from datetime import UTC, datetime
 from uuid import UUID
 
-from app.core.exceptions.user_exs import UserNotFoundError
+from app.core.enums import UserRole
+from app.core.exceptions.user_exs import ForbiddenError, UserAlreadyExistsError, UserNotFoundError
 from app.core.schemas.user import (
+    AdminRegisterUserBody,
+    UserData,
+    UserFilterQuery,
     UserReadResponse,
-    UserRole,
     UserUpdateBody,
 )
 from app.core.utils.paginated import Page, PaginationParams
@@ -19,7 +22,7 @@ class UserService:
         self.jwt_service = jwt_service
 
     @staticmethod
-    def _convert_to_response(user: User) -> UserReadResponse:
+    def _to_read_response(user: User) -> UserReadResponse:
         return UserReadResponse(
             id=user.id,
             email=user.email,
@@ -31,38 +34,67 @@ class UserService:
             createdBy=user.created_by,
         )
 
-    @staticmethod
-    def _is_admin(role: UserRole) -> bool:
-        return role == UserRole.ADMIN
-
-    async def get_all_users(self, pagination: PaginationParams) -> Page[UserReadResponse]:
+    async def get_all_users(self, pagination: PaginationParams, filters: UserFilterQuery) -> Page[UserReadResponse]:
         async with self.uow:
-            users = await self.uow.user_repo.get_paginated(offset=pagination.offset, limit=pagination.limit)
-            valid = [self._convert_to_response(u) for u in users]
-            total = await self.uow.user_repo.count()
-            return Page.build(items=valid, total=total, pagination=pagination)
+            users = await self.uow.user_repo.get_filtered(filters, offset=pagination.offset, limit=pagination.limit)
+            total = await self.uow.user_repo.count_filtered(filters)
+            items = [self._to_read_response(u) for u in users]
+            return Page.build(items=items, total=total, pagination=pagination)
 
-    async def get_by_id(self, user_id: UUID) -> UserReadResponse | None:
+    async def get_by_id(self, user_id: UUID) -> UserReadResponse:
         async with self.uow:
-            user_exists = await self.uow.user_repo.get_by_id(user_id)
-            if not user_exists:
+            user = await self.uow.user_repo.get_by_id(user_id)
+            if not user:
+                raise UserNotFoundError
+            return self._to_read_response(user)
+
+    async def create_user(self, data: AdminRegisterUserBody) -> UserReadResponse:
+        async with self.uow:
+            existing = await self.uow.user_repo.get_by_email(data.email)
+            if existing:
+                raise UserAlreadyExistsError
+
+            hashed_password = self.jwt_service.get_password_hash(data.password)
+            user = await self.uow.user_repo.add(
+                User(
+                    email=data.email,
+                    password=hashed_password,
+                    full_name=data.fullName,
+                    role=data.role,
+                    is_active=data.isActive,
+                )
+            )
+            user = await self.uow.user_repo.update(user.id, {"created_by": user.id})
+            return self._to_read_response(user)
+
+    async def update_user(self, user_id: UUID, new_data: UserUpdateBody, acting_user: UserData) -> UserReadResponse:
+        async with self.uow:
+            user = await self.uow.user_repo.get_by_id(user_id)
+            if not user:
                 raise UserNotFoundError
 
-            return self._convert_to_response(user_exists)
+            is_admin = acting_user.role == UserRole.ADMIN
+            new_role = new_data.role if new_data.role is not None else user.role
+            new_is_active = new_data.isActive if new_data.isActive is not None else user.is_active
+
+            if not is_admin and (new_role != user.role or new_is_active != user.is_active):
+                raise ForbiddenError
+
+            was_active = user.is_active
+            updated_user = await self.uow.user_repo.update(
+                user_id, {"full_name": new_data.fullName, "role": new_role, "is_active": new_is_active}
+            )
+
+            if was_active and not new_is_active:
+                await self.uow.refresh_token_repo.delete_all_for_user(user_id)
+
+            return self._to_read_response(updated_user)
 
     async def deactivate_by_id(self, user_id: UUID) -> None:
         async with self.uow:
-            await self.get_by_id(user_id)
-            return await self.uow.user_repo.deactivate(user_id, is_active=False, updated_at=datetime.now(tz=UTC))
+            user = await self.uow.user_repo.get_by_id(user_id)
+            if not user:
+                raise UserNotFoundError
 
-    async def update_by_id(self, user_id: UUID, new_data: UserUpdateBody) -> UserReadResponse:
-        async with self.uow:
-            await self.uow.user_repo.get_by_id(user_id)
-
-            data = {
-                "full_name": new_data.fullName,
-                "role": new_data.role,
-                "is_active": new_data.isActive,
-            }
-            updated_user = await self.uow.user_repo.update(user_id, data)
-            return self._convert_to_response(updated_user)
+            await self.uow.user_repo.deactivate(user_id, is_active=False, updated_at=datetime.now(UTC))
+            await self.uow.refresh_token_repo.delete_all_for_user(user_id)

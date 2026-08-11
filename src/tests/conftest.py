@@ -35,3 +35,34 @@ async def client(db_session_factory):
         yield test_client
 
     app.dependency_overrides.clear()
+
+
+@pytest.fixture
+async def admin_headers(db_session_factory, client):
+    import uuid
+    from datetime import UTC, datetime
+
+    from app.core.enums import UserRole
+    from app.infrastructure.models import User
+    from app.services.jwt_service import JWTService
+
+    admin_id = uuid.uuid4()
+    now = datetime.now(UTC)
+    async with db_session_factory() as session:
+        session.add(
+            User(
+                id=admin_id,
+                email="admin@fish.io",
+                password=JWTService().get_password_hash("adminpass1"),
+                full_name="Admin Fish",
+                role=UserRole.ADMIN,
+                is_active=True,
+                created_by=admin_id,
+                created_at=now,
+                updated_at=now,
+            )
+        )
+        await session.commit()
+
+    access_token = JWTService().create_access_token(str(admin_id))
+    return {"Authorization": f"Bearer {access_token}"}

@@ -24,9 +24,8 @@ class UserUpdateBody(PyModel):
     isActive: bool | None = None
 
 
-class UserCreateBody(UserUpdateBody):
-    email: Annotated[EmailStr, Field(max_length=254)]
-    password: Annotated[str, AfterValidator(check_len_password)]
+class AdminRegisterUserBody(UserRegisterBody):
+    role: UserRole = UserRole.USER
     isActive: bool = True
 
 
@@ -53,3 +52,12 @@ class UserReadResponse(UserData, DatetimeResponse):
 
 class UserAndAccessTokenResponse(AccessTokenResponse):
     user: UserReadResponse
+
+
+class UserFilterQuery(PyModel):
+    email: str | None = None
+    fullName: str | None = None
+    role: UserRole | None = None
+    isActive: bool | None = None
+    createdFrom: datetime | None = None
+    createdTo: datetime | None = None
