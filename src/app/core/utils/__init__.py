@@ -1,3 +1,4 @@
+from .duration import parse_duration_seconds
 from .loc2field import loc_to_field
 from .paginated import Page, PaginationParams
 from .password import check_len_password
@@ -11,4 +12,5 @@ __all__ = [
     "check_len_password",
     "loc_to_field",
     "now_iso_z",
+    "parse_duration_seconds",
 ]

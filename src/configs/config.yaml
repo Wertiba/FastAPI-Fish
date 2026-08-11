@@ -26,11 +26,7 @@ token:
   default_type: bearer
   schema: argon2
   access_token:
-    lifetime_seconds: 3600
     algorithm: HS256
-    expire_minutes: 120
-  refresh_token:
-    expire_days: 15
 
 db:
   driver: postgresql+asyncpg
