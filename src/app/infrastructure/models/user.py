@@ -1,35 +1,46 @@
 import uuid
 from datetime import datetime, timezone
 
-from pydantic import EmailStr, model_validator
-from sqlmodel import Column, DateTime, Field, Relationship, SQLModel
+from sqlalchemy import Boolean, ForeignKey, String
+from sqlalchemy import Enum as SAEnum
+from sqlalchemy.dialects.postgresql import TIMESTAMP
+from sqlalchemy.dialects.postgresql import UUID as PGUUID
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.core.schemas.user import UserRole
+from app.core.enums import UserRole
+from app.infrastructure.models.base import Base
 
 
-class User(SQLModel, table=True):
+class User(Base):
     __tablename__ = "users"
 
-    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True, index=True)
-    email: EmailStr = Field(unique=True, nullable=False)
-    password: str = Field(nullable=False)
-    fullName: str = Field(nullable=False)
-    isActive: bool = Field(default=True)
-    role: UserRole = Field(default=UserRole.USER)
-    createdBy: uuid.UUID | None = Field(default=None, foreign_key="users.id", index=True)
-
-    createdAt: datetime = Field(default_factory=datetime.now)
-    updatedAt: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc),
-        sa_column=Column(DateTime(timezone=True), nullable=False),
+    id: Mapped[uuid.UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    email: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
+    password: Mapped[str] = mapped_column(String(255), nullable=False)
+    full_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    role: Mapped[UserRole] = mapped_column(
+        SAEnum(
+            UserRole,
+            name="user_role",
+            native_enum=False,
+            length=20,
+            values_callable=lambda enum_cls: [member.value for member in enum_cls],
+        ),
+        nullable=False,
+    )
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    created_by: Mapped[uuid.UUID | None] = mapped_column(
+        PGUUID(as_uuid=True), ForeignKey("users.id"), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True, precision=6),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True, precision=6),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
     )
 
-    creator: "User | None" = Relationship(
-        sa_relationship_kwargs={"remote_side": "User.id"},
-    )
-
-    @model_validator(mode="after")
-    def default_created_by_to_self(self) -> "User":
-        if self.createdBy is None:
-            self.createdBy = self.id
-        return self
+    creator: Mapped["User | None"] = relationship(remote_side=[id])

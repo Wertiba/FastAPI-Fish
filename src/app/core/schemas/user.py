@@ -1,18 +1,15 @@
 from datetime import datetime
-from enum import Enum
 from typing import Annotated
 from uuid import UUID
 
 from pydantic import AfterValidator, EmailStr, Field
 
+from app.core.enums import UserRole
 from app.core.schemas.base import DatetimeResponse, PyModel
 from app.core.schemas.token import Token
 from app.core.utils import check_len_password
 
-
-class UserRole(str, Enum):
-    ADMN = "ADMN"
-    USER = "USER"
+__all__ = ["UserRole"]
 
 
 class UserUpdateBody(PyModel):
