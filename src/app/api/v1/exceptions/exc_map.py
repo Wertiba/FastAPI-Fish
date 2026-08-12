@@ -8,7 +8,6 @@ from app.api.v1.exceptions.api_exs import (
 )
 from app.core.exceptions.base import UnprocessableEntityError
 from app.core.exceptions.user_exs import (
-    DeficiencyApproversError,
     ForbiddenError,
     InvalidCredentialsError,
     InvalidPasswordError,
@@ -37,10 +36,6 @@ DOMAIN_TO_API: dict[type, callable] = {
     ),
     UnprocessableEntityError: lambda path, exc=None: ValidationFailed(
         path=path,
-    ),
-    DeficiencyApproversError: lambda path, exc=None: ValidationFailed(
-        path=path,
-        message="Invalid number of approvers"
     ),
     UserNotActiveError: lambda path, exc=None: Inactive(
         path=path,

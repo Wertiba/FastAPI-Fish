@@ -23,7 +23,3 @@ class InvalidCredentialsError(EntityError):
 
 class UserNotActiveError(EntityError):
     pass
-
-
-class DeficiencyApproversError(EntityError):
-    pass
