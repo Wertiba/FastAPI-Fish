@@ -1,5 +1,5 @@
 from app.api.v1.exceptions.api_exs import (
-    Conflict,
+    EmailAlreadyExists,
     Forbidden,
     Inactive,
     NotFound,
@@ -30,9 +30,9 @@ DOMAIN_TO_API: dict[type, callable] = {
     InvalidPasswordError: lambda path, exc=None: Unauthorized(
         path=path,
     ),
-    UserAlreadyExistsError: lambda path, exc=None: Conflict(
+    UserAlreadyExistsError: lambda path, exc: EmailAlreadyExists(
         path=path,
-        message="User already exists",
+        details={"field": "email", "value": exc.email},
     ),
     UnprocessableEntityError: lambda path, exc=None: ValidationFailed(
         path=path,

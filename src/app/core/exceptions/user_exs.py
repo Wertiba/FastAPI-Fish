@@ -14,7 +14,9 @@ class InvalidPasswordError(EntityError):
 
 
 class UserAlreadyExistsError(EntityError):
-    pass
+    def __init__(self, email: str):
+        super().__init__(email)
+        self.email = email
 
 
 class InvalidCredentialsError(EntityError):

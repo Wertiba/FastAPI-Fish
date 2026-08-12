@@ -86,7 +86,7 @@ class AuthService:
         async with self.uow:
             existing_user = await self.uow.user_repo.get_by_email(user_data.email)
             if existing_user:
-                raise UserAlreadyExistsError
+                raise UserAlreadyExistsError(email=user_data.email)
 
             hashed_password = self.jwt_service.get_password_hash(user_data.password)
             try:
@@ -100,7 +100,7 @@ class AuthService:
                     )
                 )
             except DuplicateError:
-                raise UserAlreadyExistsError from None
+                raise UserAlreadyExistsError(email=user_data.email) from None
             user = await self.uow.user_repo.update(user.id, {"created_by": user.id})
             return await self._issue_token_pair(user)
 

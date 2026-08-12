@@ -27,10 +27,10 @@ class NotFound(APIException):
     message = "Resource not found"
 
 
-class Conflict(APIException):
+class EmailAlreadyExists(APIException):
     status_code = status.HTTP_409_CONFLICT
-    code = "CONFLICT"
-    message = "Data conflict"
+    code = "EMAIL_ALREADY_EXISTS"
+    message = "User with this email already exists"
 
 
 class ValidationFailed(APIException):
