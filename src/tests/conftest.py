@@ -30,11 +30,15 @@ async def client(db_session_factory):
             yield session
 
     app.dependency_overrides[db_helper.session_getter] = override_session_getter
+    original_session_factory = db_helper.session_factory
+    db_helper.session_factory = db_session_factory
 
-    with TestClient(app) as test_client:
-        yield test_client
-
-    app.dependency_overrides.clear()
+    try:
+        with TestClient(app) as test_client:
+            yield test_client
+    finally:
+        db_helper.session_factory = original_session_factory
+        app.dependency_overrides.clear()
 
 
 @pytest.fixture
