@@ -9,7 +9,13 @@ from app.core.exceptions.user_exs import (
     UserNotActiveError,
 )
 from app.core.schemas.token import AccessTokenResponse
-from app.core.schemas.user import UserAndAccessTokenResponse, UserData, UserLoginBody, UserReadResponse, UserRegisterBody
+from app.core.schemas.user import (
+    UserAndAccessTokenResponse,
+    UserData,
+    UserLoginBody,
+    UserReadResponse,
+    UserRegisterBody,
+)
 from app.core.utils import as_aware_utc
 from app.infrastructure.models import RefreshToken, User
 from app.infrastructure.unit_of_work import UnitOfWork
