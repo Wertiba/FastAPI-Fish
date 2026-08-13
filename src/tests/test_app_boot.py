@@ -6,7 +6,7 @@ from app.main import app
 
 def test_app_imports_and_liveness_responds():
     client = TestClient(app)
-    response = client.get("/api/v1/health/liveness")
+    response = client.get("/health/liveness")
     assert response.status_code == 200
     assert response.json()["status"] == "ok"
 
@@ -23,10 +23,11 @@ async def test_admin_bootstrap_runs_on_startup(client, db_session_factory):
 
     assert admin is not None
     assert admin.role == "ADMIN"
+    assert admin.created_by == admin.id
 
 
 def test_metrics_endpoint_exposes_prometheus_format(client):
-    response = client.get("/api/v1/metrics")
+    response = client.get("/metrics")
     assert response.status_code == 200
     assert response.headers["content-type"].startswith("text/plain")
     assert "# HELP" in response.text

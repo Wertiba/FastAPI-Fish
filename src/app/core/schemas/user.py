@@ -43,7 +43,7 @@ class UserData(PyModel):
 
     createdAt: datetime
     updatedAt: datetime
-    createdBy: UUID | None
+    createdBy: UUID
 
 
 class UserReadResponse(UserData, DatetimeResponse):

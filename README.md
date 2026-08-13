@@ -21,8 +21,8 @@ contract, same DB schema, same "fork and go" workflow.
 - **Errors**: centralized exception handling with a consistent `ErrorResponse` shape
   (`code`, `message`, `traceId`, `timestamp`, `path`, optional `details`/`fieldErrors`).
 - **Docs**: OpenAPI/Swagger UI via FastAPI's built-in `/docs`.
-- **Ops**: liveness/readiness probes (`/api/v1/health/liveness`, `/api/v1/health/readiness`)
-  and a Prometheus metrics endpoint (`/api/v1/metrics`).
+- **Ops**: liveness/readiness probes (`/health/liveness`, `/health/readiness`) and a Prometheus
+  metrics endpoint (`/metrics`), kept outside the versioned `/api/v1` surface.
 - **Logging**: a per-request trace ID (`X-Trace-Id` header), generated or echoed back on every
   response and embedded in `ErrorResponse.traceId`, so a client-visible error can be found
   verbatim in server logs. Colored, human-readable console output plus rotating file logs under
@@ -92,7 +92,8 @@ contract, same DB schema, same "fork and go" workflow.
     │   ├── run.py                 Local dev entry point (uvicorn)
     │   ├── actions/                Startup actions (admin bootstrap) + standalone reseed script
     │   ├── api/
-    │   │   ├── v1/endpoints/       Auth, Users, Health, Metrics routers
+    │   │   ├── endpoints/           Health, Metrics routers — unversioned, mounted at the app root
+    │   │   ├── v1/endpoints/       Auth, Users routers
     │   │   ├── v1/dependencies/     Current-user / admin / admin-or-self / pagination / filter deps
     │   │   ├── v1/exceptions/       API-facing exception classes, domain->API error mapping, handlers
     │   │   └── v1/utils/            Refresh-token cookie helpers
@@ -169,16 +170,18 @@ docker compose up --build
 
 ## API Overview
 
-Base path: `/api/v1`.
+Business endpoints are versioned under `/api/v1`; ops endpoints (health, metrics) are not —
+they're mounted at the app root so infra tooling (probes, scrape configs) doesn't need to track
+API version bumps.
 
-- `POST /auth/register` — create an account, returns access token + sets refresh-token cookie
-- `POST /auth/login` — authenticate, returns access token + sets refresh-token cookie
-- `POST /auth/refresh` — rotate the refresh token, returns a new access token
-- `POST /auth/logout` — revoke the current refresh token
-- `GET /users` — list users, paginated/filterable (admin only)
-- `POST /users` — create a user (admin only)
-- `GET /users/me`, `PUT /users/me` — read/update the current user
-- `GET /users/{id}`, `PUT /users/{id}`, `DELETE /users/{id}` — admin, or self for GET/PUT
+- `POST /api/v1/auth/register` — create an account, returns access token + sets refresh-token cookie
+- `POST /api/v1/auth/login` — authenticate, returns access token + sets refresh-token cookie
+- `POST /api/v1/auth/refresh` — rotate the refresh token, returns a new access token
+- `POST /api/v1/auth/logout` — revoke the current refresh token
+- `GET /api/v1/users` — list users, paginated/filterable (admin only)
+- `POST /api/v1/users` — create a user (admin only)
+- `GET /api/v1/users/me`, `PUT /api/v1/users/me` — read/update the current user
+- `GET /api/v1/users/{id}`, `PUT /api/v1/users/{id}`, `DELETE /api/v1/users/{id}` — admin, or self for GET/PUT
 - `GET /health/liveness` — always 200
 - `GET /health/readiness` — 200 if the database is reachable, else 503 with `checks`
 - `GET /metrics` — Prometheus exposition format

@@ -30,6 +30,7 @@ async def create_admin(session: AsyncSession):
     session.add(new_admin)
 
     await session.flush()
+    new_admin.created_by = new_admin.id
     await session.commit()
     await session.refresh(new_admin)
 

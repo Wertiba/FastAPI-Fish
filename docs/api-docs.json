@@ -5,13 +5,13 @@
     "version": "0.1.0"
   },
   "paths": {
-    "/api/v1/health/liveness": {
+    "/health/liveness": {
       "get": {
         "tags": [
           "Health"
         ],
         "summary": "Liveness",
-        "operationId": "liveness_api_v1_health_liveness_get",
+        "operationId": "liveness_health_liveness_get",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -26,13 +26,13 @@
         }
       }
     },
-    "/api/v1/health/readiness": {
+    "/health/readiness": {
       "get": {
         "tags": [
           "Health"
         ],
         "summary": "Readiness",
-        "operationId": "readiness_api_v1_health_readiness_get",
+        "operationId": "readiness_health_readiness_get",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -41,7 +41,7 @@
                 "schema": {
                   "additionalProperties": true,
                   "type": "object",
-                  "title": "Response Readiness Api V1 Health Readiness Get"
+                  "title": "Response Readiness Health Readiness Get"
                 }
               }
             }
@@ -49,13 +49,13 @@
         }
       }
     },
-    "/api/v1/metrics": {
+    "/metrics": {
       "get": {
         "tags": [
           "Metrics"
         ],
         "summary": "Metrics",
-        "operationId": "metrics_api_v1_metrics_get",
+        "operationId": "metrics_metrics_get",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -753,15 +753,8 @@
             "title": "Updatedat"
           },
           "createdBy": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "string",
+            "format": "uuid",
             "title": "Createdby"
           }
         },
