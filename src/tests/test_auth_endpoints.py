@@ -39,6 +39,12 @@ def test_register_accepts_cyrillic_full_name(client):
     assert response.status_code == 201
 
 
+def test_validation_error_message_is_english(client):
+    response = client.post("/api/v1/auth/register", json={"email": "not-an-email", "password": "x", "fullName": ""})
+    assert response.status_code == 422
+    assert response.json()["message"] == "Some fields are not correct."
+
+
 def test_login_returns_200_and_sets_refresh_cookie(client):
     client.post(
         "/api/v1/auth/register",
