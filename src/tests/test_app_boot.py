@@ -4,9 +4,9 @@ from fastapi.testclient import TestClient
 from app.main import app
 
 
-def test_app_imports_and_ping_responds():
+def test_app_imports_and_liveness_responds():
     client = TestClient(app)
-    response = client.get("/api/v1/ping")
+    response = client.get("/api/v1/health/liveness")
     assert response.status_code == 200
     assert response.json()["status"] == "ok"
 
