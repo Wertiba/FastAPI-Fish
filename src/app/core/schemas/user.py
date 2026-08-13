@@ -15,11 +15,11 @@ __all__ = ["UserRole"]
 class UserRegisterBody(PyModel):
     email: Annotated[EmailStr, Field(max_length=254)]
     password: Annotated[str, AfterValidator(check_len_password)]
-    fullName: Annotated[str, Field(min_length=2, max_length=200)]
+    fullName: Annotated[str, Field(pattern=r"^[а-яА-Яa-zA-Z0-9 _-]{2,200}$")]
 
 
 class UserUpdateBody(PyModel):
-    fullName: Annotated[str, Field(min_length=2, max_length=200)]
+    fullName: Annotated[str, Field(pattern=r"^[а-яА-Яa-zA-Z0-9 _-]{2,200}$")]
     role: UserRole | None = None
     isActive: bool | None = None
 

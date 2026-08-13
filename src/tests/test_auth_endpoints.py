@@ -23,6 +23,22 @@ def test_register_rejects_duplicate_email(client):
     assert body["details"] == {"field": "email", "value": "dup@fish.io"}
 
 
+def test_register_rejects_full_name_with_invalid_characters(client):
+    response = client.post(
+        "/api/v1/auth/register",
+        json={"email": "badname@fish.io", "password": "password1", "fullName": "Fish!!!"},
+    )
+    assert response.status_code == 422
+
+
+def test_register_accepts_cyrillic_full_name(client):
+    response = client.post(
+        "/api/v1/auth/register",
+        json={"email": "cyrillic@fish.io", "password": "password1", "fullName": "Иван Иванов"},
+    )
+    assert response.status_code == 201
+
+
 def test_login_returns_200_and_sets_refresh_cookie(client):
     client.post(
         "/api/v1/auth/register",
