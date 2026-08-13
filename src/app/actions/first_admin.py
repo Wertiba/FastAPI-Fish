@@ -9,7 +9,7 @@ from app.infrastructure.models.user import User
 
 
 async def create_admin(session: AsyncSession):
-    email = settings.ADMIN_EMAIL
+    email = settings.APP_ADMIN_EMAIL
     logger = Logger().get_logger()
 
     stmt = select(User).where(User.email == email)
@@ -22,8 +22,8 @@ async def create_admin(session: AsyncSession):
 
     new_admin = User(
         email=email,
-        password=argon2.hash(settings.ADMIN_PASSWORD),
-        full_name=settings.ADMIN_FULLNAME,
+        password=argon2.hash(settings.APP_ADMIN_PASSWORD),
+        full_name=settings.APP_ADMIN_FULLNAME,
         role=UserRole.ADMIN,
         is_active=True,
     )

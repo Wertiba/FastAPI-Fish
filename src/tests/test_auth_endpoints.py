@@ -18,6 +18,31 @@ def test_register_rejects_duplicate_email(client):
     response = client.post("/api/v1/auth/register", json=payload)
 
     assert response.status_code == 409
+    body = response.json()
+    assert body["code"] == "EMAIL_ALREADY_EXISTS"
+    assert body["details"] == {"field": "email", "value": "dup@fish.io"}
+
+
+def test_register_rejects_full_name_with_invalid_characters(client):
+    response = client.post(
+        "/api/v1/auth/register",
+        json={"email": "badname@fish.io", "password": "password1", "fullName": "Fish!!!"},
+    )
+    assert response.status_code == 422
+
+
+def test_register_accepts_cyrillic_full_name(client):
+    response = client.post(
+        "/api/v1/auth/register",
+        json={"email": "cyrillic@fish.io", "password": "password1", "fullName": "Иван Иванов"},
+    )
+    assert response.status_code == 201
+
+
+def test_validation_error_message_is_english(client):
+    response = client.post("/api/v1/auth/register", json={"email": "not-an-email", "password": "x", "fullName": ""})
+    assert response.status_code == 422
+    assert response.json()["message"] == "Some fields are not correct."
 
 
 def test_login_returns_200_and_sets_refresh_cookie(client):

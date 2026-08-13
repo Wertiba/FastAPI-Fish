@@ -3,6 +3,7 @@ from uuid import uuid4
 
 from fastapi import status
 
+from app.core.middleware.trace_id import get_trace_id
 from app.core.schemas.responses import ErrorResponse
 from app.core.utils import now_iso_z
 
@@ -22,7 +23,7 @@ class APIException(Exception):
     ):
         self.path = path
         self.message = message or self.message
-        self.trace_id = trace_id or str(uuid4())
+        self.trace_id = trace_id or get_trace_id() or str(uuid4())
         self.timestamp = now_iso_z()
         self.details = details or {}
 

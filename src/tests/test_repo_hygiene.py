@@ -23,3 +23,13 @@ def test_config_yaml_has_no_unrelated_project_cruft():
     assert "exp_index" not in text
     assert "restrictions" not in text
     assert "cache" not in text.split("token:")[0]  # crude but sufficient: no top-level cache: block
+
+
+def test_exc_map_has_no_foreign_domain_leftovers():
+    text = (REPO_ROOT / "src" / "app" / "api" / "v1" / "exceptions" / "exc_map.py").read_text(encoding="utf-8")
+    assert "DeficiencyApprovers" not in text
+
+
+def test_user_exs_has_no_foreign_domain_leftovers():
+    text = (REPO_ROOT / "src" / "app" / "core" / "exceptions" / "user_exs.py").read_text(encoding="utf-8")
+    assert "DeficiencyApprovers" not in text
