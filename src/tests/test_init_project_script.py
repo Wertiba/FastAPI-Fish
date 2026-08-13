@@ -1,5 +1,7 @@
+import json
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -69,3 +71,20 @@ def test_init_project_sh_requires_exactly_one_argument(tmp_path):
         text=True,
     )
     assert result.returncode != 0
+
+
+def test_export_openapi_writes_valid_spec_with_known_routes(tmp_path):
+    output_path = tmp_path / "api-docs.json"
+
+    result = subprocess.run(
+        [sys.executable, str(REPO_ROOT / "actions" / "export_openapi.py"), "--out", str(output_path)],
+        cwd=REPO_ROOT,
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, result.stderr
+
+    spec = json.loads(output_path.read_text(encoding="utf-8"))
+    assert spec["info"]["title"]
+    assert "/api/v1/auth/register" in spec["paths"]
+    assert "/api/v1/users/{user_id}" in spec["paths"]
