@@ -1,4 +1,4 @@
-from uuid import UUID, uuid4
+from uuid import UUID
 
 from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
@@ -7,6 +7,7 @@ from fastapi.responses import JSONResponse
 from app.api.v1.exceptions import APIException
 from app.api.v1.exceptions.exc_map import DOMAIN_TO_API
 from app.core.exceptions.user_exs import EntityError
+from app.core.middleware.trace_id import get_trace_id
 from app.core.schemas.responses import FieldError, ValidationErrorResponse
 from app.core.utils import loc_to_field
 from app.core.utils.loc2field import priority, rejected_value
@@ -36,7 +37,7 @@ def register_exception_handlers(app: FastAPI):
 
     @app.exception_handler(RequestValidationError)
     async def validation_exception_handler(request: Request, exc: RequestValidationError):  # noqa: RUF029
-        trace_id = request.headers.get("X-Request-Id") or str(uuid4())
+        trace_id = get_trace_id()
 
         field_errors = [
             FieldError(
