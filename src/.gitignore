@@ -1,2 +1,5 @@
 .env
 /logs/
+.coverage
+/coverage.xml
+/htmlcov/

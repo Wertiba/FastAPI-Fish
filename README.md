@@ -6,9 +6,7 @@ validation, structured error handling, OpenAPI docs, and a pytest test suite wir
 Actions CI.
 
 Use it as a `git init`-and-go base for a new service, or as a reference for how these pieces fit
-together in a FastAPI project. It's the FastAPI counterpart to the
-[`KotlinFish`](https://github.com/Wertiba/KotlinFish) Kotlin/Spring Boot template — same API
-contract, same DB schema, same "fork and go" workflow.
+together in a FastAPI project.
 
 ## Features
 
@@ -27,7 +25,7 @@ contract, same DB schema, same "fork and go" workflow.
   response and embedded in `ErrorResponse.traceId`, so a client-visible error can be found
   verbatim in server logs. Colored, human-readable console output plus rotating file logs under
   `logs/` (loguru).
-- **Quality**: ruff for linting/formatting, CI on every push/PR.
+- **Quality**: ruff for linting/formatting, pytest-cov for coverage reporting, CI on every push/PR.
 - **Containerized**: `Dockerfile` + `docker-compose.yml` (app + Postgres), with a named volume
   for the Postgres data directory.
 
@@ -153,6 +151,9 @@ alembic upgrade head
 
 # Run the test suite (in-memory SQLite, no Docker required)
 python -m pytest
+
+# Run tests with a coverage report (terminal + HTML in htmlcov/)
+python -m pytest --cov=app --cov-report=term-missing --cov-report=html
 
 # Run one test file or test
 python -m pytest tests/test_auth_endpoints.py -v
