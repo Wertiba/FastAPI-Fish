@@ -32,7 +32,7 @@ class FieldError(PyModel):
 
 class ValidationErrorResponse(PyModel):
     code: str = "VALIDATION_FAILED"
-    message: str = "Некоторые поля не прошли валидацию"
+    message: str = "Some fields are not correct."
     traceId: UUID = Field(default_factory=uuid4)
     timestamp: str = Field(default_factory=now_iso_z)
     path: str

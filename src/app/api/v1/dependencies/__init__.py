@@ -5,8 +5,8 @@ from .services import (
     UserServiceDep,
 )
 from .session import SessionDep
-from .user_filters import UserFilterDep
 from .uow import UnitOfWorkDep
+from .user_filters import UserFilterDep
 
 __all__ = [
     "AdminOrSelfDep",

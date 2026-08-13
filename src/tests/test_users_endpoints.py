@@ -123,3 +123,14 @@ def test_non_admin_cannot_list_users(client):
     _, access_token = _register(client)
     response = client.get("/api/v1/users", headers={"Authorization": f"Bearer {access_token}"})
     assert response.status_code == 403
+
+
+def test_create_user_rejects_duplicate_email_with_details(client, admin_headers):
+    payload = {"email": "dup2@fish.io", "password": "password1", "fullName": "Fish Two"}
+    client.post("/api/v1/users", json=payload, headers=admin_headers)
+    response = client.post("/api/v1/users", json=payload, headers=admin_headers)
+
+    assert response.status_code == 409
+    body = response.json()
+    assert body["code"] == "EMAIL_ALREADY_EXISTS"
+    assert body["details"] == {"field": "email", "value": "dup2@fish.io"}

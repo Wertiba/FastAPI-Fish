@@ -53,7 +53,7 @@ class UserService:
         async with self.uow:
             existing = await self.uow.user_repo.get_by_email(data.email)
             if existing:
-                raise UserAlreadyExistsError
+                raise UserAlreadyExistsError(email=data.email)
 
             hashed_password = self.jwt_service.get_password_hash(data.password)
             try:
@@ -67,7 +67,7 @@ class UserService:
                     )
                 )
             except DuplicateError:
-                raise UserAlreadyExistsError from None
+                raise UserAlreadyExistsError(email=data.email) from None
             user = await self.uow.user_repo.update(user.id, {"created_by": user.id})
             return self._to_read_response(user)
 

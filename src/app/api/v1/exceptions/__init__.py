@@ -1,10 +1,10 @@
-from .api_exs import BadRequest, Conflict, Forbidden, Inactive, NotFound, Unauthorized, ValidationFailed
+from .api_exs import BadRequest, EmailAlreadyExists, Forbidden, Inactive, NotFound, Unauthorized, ValidationFailed
 from .base import APIException
 
 __all__ = [
     "APIException",
     "BadRequest",
-    "Conflict",
+    "EmailAlreadyExists",
     "Forbidden",
     "Inactive",
     "NotFound",

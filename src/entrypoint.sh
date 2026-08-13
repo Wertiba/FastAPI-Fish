@@ -20,8 +20,5 @@ else
   echo "[entrypoint] alembic not found in PATH — skipping migrations"
 fi
 
-echo "[entrypoint] Creating first admin if not exists..."
-python -m app.actions.run
-
 echo "[entrypoint] Starting application..."
 exec "$@"
