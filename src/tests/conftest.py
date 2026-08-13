@@ -1,3 +1,5 @@
+from contextlib import asynccontextmanager
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
@@ -23,15 +25,15 @@ async def db_session_factory():
     await engine.dispose()
 
 
-@pytest.fixture
-async def client(db_session_factory):
+@asynccontextmanager
+async def _client_bound_to(session_factory):
     async def override_session_getter():
-        async with db_session_factory() as session:
+        async with session_factory() as session:
             yield session
 
     app.dependency_overrides[db_helper.session_getter] = override_session_getter
     original_session_factory = db_helper.session_factory
-    db_helper.session_factory = db_session_factory
+    db_helper.session_factory = session_factory
 
     try:
         with TestClient(app) as test_client:
@@ -39,6 +41,12 @@ async def client(db_session_factory):
     finally:
         db_helper.session_factory = original_session_factory
         app.dependency_overrides.clear()
+
+
+@pytest.fixture
+async def client(db_session_factory):
+    async with _client_bound_to(db_session_factory) as test_client:
+        yield test_client
 
 
 @pytest.fixture
