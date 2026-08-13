@@ -68,8 +68,11 @@ async def client(pg_session_factory):
     db_helper.session_factory = pg_session_factory
 
     try:
+        # https scheme, not http: with APP_COOKIE_SECURE=true (the .env.example / CI default),
+        # Set-Cookie responses carry the Secure attribute, and httpx's cookie jar will only
+        # store/resend Secure cookies for an https origin.
         transport = ASGITransport(app=app)
-        async with AsyncClient(transport=transport, base_url="http://testserver") as test_client:
+        async with AsyncClient(transport=transport, base_url="https://testserver") as test_client:
             yield test_client
     finally:
         db_helper.session_factory = original_session_factory

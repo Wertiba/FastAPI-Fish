@@ -36,7 +36,12 @@ async def _client_bound_to(session_factory):
     db_helper.session_factory = session_factory
 
     try:
-        with TestClient(app) as test_client:
+        # https scheme, not http: with APP_COOKIE_SECURE=true (the .env.example / CI default),
+        # Set-Cookie responses carry the Secure attribute, and httpx's cookie jar will only
+        # store/resend Secure cookies for an https origin. Over plain http the jar silently
+        # drops the refreshToken cookie, breaking every test that relies on the client
+        # resending it automatically.
+        with TestClient(app, base_url="https://testserver") as test_client:
             yield test_client
     finally:
         db_helper.session_factory = original_session_factory
