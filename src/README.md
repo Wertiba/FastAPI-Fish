@@ -199,4 +199,4 @@ out of sync with the real CI config.
 
 ## License
 
-MIT License — see [LICENSE](../LICENSE).
+Apache License 2.0 — see [LICENSE](../LICENSE).
