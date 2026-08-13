@@ -25,6 +25,13 @@ async def test_admin_bootstrap_runs_on_startup(client, db_session_factory):
     assert admin.role == "ADMIN"
 
 
+def test_metrics_endpoint_exposes_prometheus_format(client):
+    response = client.get("/api/v1/metrics")
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("text/plain")
+    assert "# HELP" in response.text
+
+
 def test_user_role_has_no_typo():
     from app.core.schemas.user import UserRole
 
