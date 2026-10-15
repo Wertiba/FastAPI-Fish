@@ -1,0 +1,50 @@
+from uuid import uuid4
+
+from fastapi.testclient import TestClient
+
+from tests.conftest import RegisterUser
+
+URL = "/api/v1/{{url}}"
+
+
+def test_crud_flow(client: TestClient, register_user: RegisterUser) -> None:
+    headers = register_user()["headers"]
+
+    created = client.post(URL, headers=headers, json={"title": "First", "description": "d"})
+    assert created.status_code == 201
+    item_id = created.json()["id"]
+
+    assert client.get(f"{URL}/{item_id}", headers=headers).json()["title"] == "First"
+
+    updated = client.put(f"{URL}/{item_id}", headers=headers, json={"title": "Renamed"})
+    assert updated.json()["title"] == "Renamed"
+    assert updated.json()["description"] is None
+
+    listed = client.get(URL, headers=headers).json()
+    assert listed["total"] == 1
+
+    assert client.delete(f"{URL}/{item_id}", headers=headers).status_code == 204
+    assert client.get(f"{URL}/{item_id}", headers=headers).status_code == 404
+
+
+def test_users_see_only_their_own(
+    client: TestClient, register_user: RegisterUser, admin_headers: dict[str, str]
+) -> None:
+    alice, bob = register_user()["headers"], register_user()["headers"]
+    item_id = client.post(URL, headers=alice, json={"title": "Alice's"}).json()["id"]
+    client.post(URL, headers=bob, json={"title": "Bob's"})
+
+    assert client.get(URL, headers=alice).json()["total"] == 1
+    assert client.get(URL, headers=admin_headers).json()["total"] == 2
+    assert client.get(f"{URL}/{item_id}", headers=bob).status_code == 403
+    assert client.put(f"{URL}/{item_id}", headers=bob, json={"title": "x"}).status_code == 403
+    assert client.delete(f"{URL}/{item_id}", headers=bob).status_code == 403
+    assert client.get(f"{URL}/{item_id}", headers=admin_headers).status_code == 200
+
+
+def test_requires_auth_and_validates(client: TestClient, register_user: RegisterUser) -> None:
+    headers = register_user()["headers"]
+
+    assert client.get(URL).status_code == 401
+    assert client.post(URL, headers=headers, json={"title": ""}).status_code == 422
+    assert client.get(f"{URL}/{uuid4()}", headers=headers).status_code == 404

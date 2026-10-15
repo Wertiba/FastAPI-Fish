@@ -1,0 +1,19 @@
+from dishka import Provider, Scope, provide, provide_all
+
+from app.modules.{{module}}.application.commands import Create{{Entity}}, Delete{{Entity}}, Update{{Entity}}
+from app.modules.{{module}}.application.ports import {{Entity}}Repository
+from app.modules.{{module}}.application.queries import Get{{Entity}}, List{{Module}}
+from app.modules.{{module}}.infrastructure.repository import Sql{{Entity}}Repository
+
+
+class {{Module}}Provider(Provider):
+    scope = Scope.REQUEST
+
+    repository = provide(Sql{{Entity}}Repository, provides={{Entity}}Repository)
+    interactors = provide_all(
+        Create{{Entity}},
+        Update{{Entity}},
+        Delete{{Entity}},
+        Get{{Entity}},
+        List{{Module}},
+    )

@@ -1,0 +1,43 @@
+from uuid import UUID
+
+from dishka.integrations.fastapi import DishkaRoute, FromDishka
+from fastapi import APIRouter, status
+
+from app.modules.{{module}}.application.commands import Create{{Entity}}, Delete{{Entity}}, Update{{Entity}}
+from app.modules.{{module}}.application.queries import Get{{Entity}}, List{{Module}}
+from app.modules.{{module}}.presentation.schemas import {{Entity}}Request, {{Entity}}Response
+from app.shared.presentation.dependencies import BEARER_AUTH, PaginationQuery
+from app.shared.presentation.schemas import Page
+
+router = APIRouter(prefix="/{{url}}", tags=["{{Title}}"], route_class=DishkaRoute, dependencies=BEARER_AUTH)
+
+
+@router.get("")
+async def list_{{module}}(
+    list_{{module}}: FromDishka[List{{Module}}], pagination: PaginationQuery
+) -> Page[{{Entity}}Response]:
+    page = await list_{{module}}(pagination)
+    return Page[{{Entity}}Response].from_page(page, {{Entity}}Response.from_entity)
+
+
+@router.post("", status_code=status.HTTP_201_CREATED)
+async def create_{{entity}}(body: {{Entity}}Request, create: FromDishka[Create{{Entity}}]) -> {{Entity}}Response:
+    return {{Entity}}Response.from_entity(await create(title=body.title, description=body.description))
+
+
+@router.get("/{{{entity}}_id}")
+async def get_{{entity}}({{entity}}_id: UUID, get: FromDishka[Get{{Entity}}]) -> {{Entity}}Response:
+    return {{Entity}}Response.from_entity(await get({{entity}}_id))
+
+
+@router.put("/{{{entity}}_id}")
+async def update_{{entity}}(
+    {{entity}}_id: UUID, body: {{Entity}}Request, update: FromDishka[Update{{Entity}}]
+) -> {{Entity}}Response:
+    {{entity}} = await update({{entity}}_id, title=body.title, description=body.description)
+    return {{Entity}}Response.from_entity({{entity}})
+
+
+@router.delete("/{{{entity}}_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_{{entity}}({{entity}}_id: UUID, delete: FromDishka[Delete{{Entity}}]) -> None:
+    await delete({{entity}}_id)

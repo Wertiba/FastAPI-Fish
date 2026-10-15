@@ -1,0 +1,36 @@
+from uuid import UUID
+
+from app.modules.{{module}}.application.ports import {{Entity}}Repository
+from app.modules.{{module}}.domain.entities import {{Entity}}
+from app.modules.{{module}}.domain.errors import {{Entity}}NotFoundError
+from app.shared.application.identity import IdentityProvider
+from app.shared.application.pagination import Page, Pagination
+
+
+class Get{{Entity}}:
+    def __init__(self, idp: IdentityProvider, repo: {{Entity}}Repository) -> None:
+        self._idp = idp
+        self._repo = repo
+
+    async def __call__(self, {{entity}}_id: UUID) -> {{Entity}}:
+        actor = await self._idp.get_identity()
+        {{entity}} = await self._repo.get_by_id({{entity}}_id)
+        if {{entity}} is None:
+            raise {{Entity}}NotFoundError
+        {{entity}}.ensure_can_be_managed_by(actor)
+        return {{entity}}
+
+
+class List{{Module}}:
+    """Пользователь видит свои записи, админ — все."""
+
+    def __init__(self, idp: IdentityProvider, repo: {{Entity}}Repository) -> None:
+        self._idp = idp
+        self._repo = repo
+
+    async def __call__(self, pagination: Pagination) -> Page[{{Entity}}]:
+        actor = await self._idp.get_identity()
+        owner_id = None if actor.is_admin else actor.user_id
+        items = await self._repo.find(owner_id=owner_id, pagination=pagination)
+        total = await self._repo.count(owner_id=owner_id)
+        return Page(items=items, total=total, page=pagination.page, size=pagination.size)

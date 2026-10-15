@@ -1,0 +1,38 @@
+from dataclasses import dataclass
+from datetime import datetime
+from uuid import UUID, uuid4
+
+from app.shared.domain.errors import AccessDeniedError
+from app.shared.domain.identity import Identity
+from app.shared.domain.time import utc_now
+
+
+@dataclass(kw_only=True, eq=False)
+class {{Entity}}:
+    id: UUID
+    owner_id: UUID
+    title: str
+    description: str | None
+    created_at: datetime
+    updated_at: datetime
+
+    @classmethod
+    def create(cls, *, owner_id: UUID, title: str, description: str | None = None) -> "{{Entity}}":
+        now = utc_now()
+        return cls(
+            id=uuid4(),
+            owner_id=owner_id,
+            title=title,
+            description=description,
+            created_at=now,
+            updated_at=now,
+        )
+
+    def update(self, *, title: str, description: str | None) -> None:
+        self.title = title
+        self.description = description
+        self.updated_at = utc_now()
+
+    def ensure_can_be_managed_by(self, actor: Identity) -> None:
+        if not actor.is_admin and actor.user_id != self.owner_id:
+            raise AccessDeniedError

@@ -1,0 +1,18 @@
+"""Публичный контракт модуля {{module}}.
+
+Другие модули импортируют из ``{{module}}`` ТОЛЬКО этот файл. Сюда кладут:
+- DTO, которые нужны соседям;
+- Protocol фасада (реализация — в ``application/``, регистрация — в ``ioc.py``);
+- события, на которые соседи могут подписаться в своём ``module.py``.
+"""
+
+from dataclasses import dataclass
+from uuid import UUID
+
+from app.shared.application.events import Event
+
+
+@dataclass(frozen=True, kw_only=True)
+class {{Entity}}Deleted(Event):
+    {{entity}}_id: UUID
+    owner_id: UUID

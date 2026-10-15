@@ -1,45 +1,75 @@
+"""Фабрика приложения. Запуск: ``uvicorn app.main:create_app --factory``."""
+
+from collections.abc import AsyncIterator, Sequence
 from contextlib import asynccontextmanager
 
+from dishka import AsyncContainer
+from dishka.integrations.fastapi import setup_dishka
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.ext.asyncio import AsyncEngine
 
-from app.actions.first_admin import create_admin
-from app.api import ops_router, v1_router
-from app.api.v1.exceptions.handlers import register_exception_handlers
-from app.core.config import settings
-from app.core.logger import Logger
-from app.core.middleware.trace_id import TraceIdMiddleware
-from app.infrastructure.database.db_helper import db_helper
+from app.bootstrap.config import Settings
+from app.bootstrap.ioc import build_container
+from app.bootstrap.logging import setup_logging
+from app.modules.registry import MODULES
+from app.modules.users.application.commands import EnsureAdmin
+from app.shared.infrastructure.database import metadata
+from app.shared.module import Module
+from app.shared.presentation.errors import setup_error_handlers
+from app.shared.presentation.ops import router as ops_router
+from app.shared.presentation.request_context import RequestContextMiddleware
 
-logger = Logger()
-
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    async with db_helper.session_factory() as session:
-        await create_admin(session)
-    yield
+API_PREFIX = "/api/v1"
 
 
-app = FastAPI(lifespan=lifespan)
-register_exception_handlers(app)
+async def _on_startup(container: AsyncContainer, settings: Settings) -> None:
+    if settings.db_create_tables:
+        engine = await container.get(AsyncEngine)
+        async with engine.begin() as conn:
+            await conn.run_sync(metadata.create_all)
 
-_DEFAULT_CORS_ORIGINS = "http://localhost,http://localhost:8080"
-origins = [
-    origin.strip()
-    for origin in settings.get("APP_CORS_ALLOWED_ORIGINS", _DEFAULT_CORS_ORIGINS).split(",")
-    if origin.strip()
-]
+    if settings.admin_email and settings.admin_password:
+        async with container() as request_container:
+            ensure_admin = await request_container.get(EnsureAdmin)
+            await ensure_admin(
+                email=settings.admin_email,
+                password=settings.admin_password,
+                full_name=settings.admin_full_name,
+            )
 
-app.add_middleware(
-    CORSMiddleware,  # noqa
-    allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
-app.add_middleware(TraceIdMiddleware)
+def create_app(settings: Settings | None = None, modules: Sequence[Module] = MODULES) -> FastAPI:
+    settings = settings or Settings()  # type: ignore[call-arg]  # значения берутся из env
+    setup_logging(settings.log_level, settings.log_file)
 
-app.include_router(ops_router)
-app.include_router(v1_router, prefix="/api")
+    for module in modules:
+        if module.map_tables:
+            module.map_tables()
+    container = build_container(settings, modules)
+
+    @asynccontextmanager
+    async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+        await _on_startup(container, settings)
+        yield
+        await container.close()
+
+    app = FastAPI(lifespan=lifespan)
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=settings.cors_origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+        expose_headers=["X-Trace-Id", "Location"],
+    )
+    app.add_middleware(RequestContextMiddleware)
+    setup_error_handlers(app)
+
+    app.include_router(ops_router)
+    for module in modules:
+        for router in module.routers:
+            app.include_router(router, prefix=API_PREFIX)
+
+    setup_dishka(container, app)
+    return app

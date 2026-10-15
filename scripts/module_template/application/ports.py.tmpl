@@ -1,0 +1,19 @@
+from typing import Protocol
+from uuid import UUID
+
+from app.modules.{{module}}.domain.entities import {{Entity}}
+from app.shared.application.pagination import Pagination
+
+
+class {{Entity}}Repository(Protocol):
+    async def add(self, {{entity}}: {{Entity}}) -> None: ...
+
+    async def get_by_id(self, {{entity}}_id: UUID) -> {{Entity}} | None: ...
+
+    async def delete(self, {{entity}}: {{Entity}}) -> None: ...
+
+    async def find(self, *, owner_id: UUID | None, pagination: Pagination) -> list[{{Entity}}]:
+        """``owner_id=None`` — без фильтра по владельцу (для админа)."""
+        ...
+
+    async def count(self, *, owner_id: UUID | None) -> int: ...

@@ -1,0 +1,24 @@
+from uuid import UUID
+
+from pydantic import Field
+
+from app.modules.{{module}}.domain.entities import {{Entity}}
+from app.shared.presentation.schemas import CamelModel, UtcDatetime
+
+
+class {{Entity}}Request(CamelModel):
+    title: str = Field(min_length=1, max_length=200)
+    description: str | None = Field(None, max_length=5000)
+
+
+class {{Entity}}Response(CamelModel):
+    id: UUID
+    owner_id: UUID
+    title: str
+    description: str | None
+    created_at: UtcDatetime
+    updated_at: UtcDatetime
+
+    @classmethod
+    def from_entity(cls, {{entity}}: {{Entity}}) -> "{{Entity}}Response":
+        return cls.model_validate({{entity}})

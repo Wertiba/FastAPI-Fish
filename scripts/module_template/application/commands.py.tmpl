@@ -1,0 +1,64 @@
+from uuid import UUID
+
+from app.modules.{{module}}.application.ports import {{Entity}}Repository
+from app.modules.{{module}}.domain.entities import {{Entity}}
+from app.modules.{{module}}.domain.errors import {{Entity}}NotFoundError
+from app.modules.{{module}}.public import {{Entity}}Deleted
+from app.shared.application.events import EventPublisher
+from app.shared.application.identity import IdentityProvider
+from app.shared.application.transaction import TransactionManager
+
+
+class Create{{Entity}}:
+    def __init__(self, idp: IdentityProvider, repo: {{Entity}}Repository, tx: TransactionManager) -> None:
+        self._idp = idp
+        self._repo = repo
+        self._tx = tx
+
+    async def __call__(self, *, title: str, description: str | None) -> {{Entity}}:
+        actor = await self._idp.get_identity()
+        {{entity}} = {{Entity}}.create(owner_id=actor.user_id, title=title, description=description)
+        await self._repo.add({{entity}})
+        await self._tx.commit()
+        return {{entity}}
+
+
+class Update{{Entity}}:
+    def __init__(self, idp: IdentityProvider, repo: {{Entity}}Repository, tx: TransactionManager) -> None:
+        self._idp = idp
+        self._repo = repo
+        self._tx = tx
+
+    async def __call__(self, {{entity}}_id: UUID, *, title: str, description: str | None) -> {{Entity}}:
+        actor = await self._idp.get_identity()
+        {{entity}} = await self._repo.get_by_id({{entity}}_id)
+        if {{entity}} is None:
+            raise {{Entity}}NotFoundError
+        {{entity}}.ensure_can_be_managed_by(actor)
+        {{entity}}.update(title=title, description=description)
+        await self._tx.commit()
+        return {{entity}}
+
+
+class Delete{{Entity}}:
+    def __init__(
+        self,
+        idp: IdentityProvider,
+        repo: {{Entity}}Repository,
+        events: EventPublisher,
+        tx: TransactionManager,
+    ) -> None:
+        self._idp = idp
+        self._repo = repo
+        self._events = events
+        self._tx = tx
+
+    async def __call__(self, {{entity}}_id: UUID) -> None:
+        actor = await self._idp.get_identity()
+        {{entity}} = await self._repo.get_by_id({{entity}}_id)
+        if {{entity}} is None:
+            raise {{Entity}}NotFoundError
+        {{entity}}.ensure_can_be_managed_by(actor)
+        await self._repo.delete({{entity}})
+        await self._events.publish({{Entity}}Deleted({{entity}}_id={{entity}}.id, owner_id={{entity}}.owner_id))
+        await self._tx.commit()

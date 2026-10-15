@@ -1,0 +1,13 @@
+from app.modules.{{module}}.infrastructure.tables import map_tables
+from app.modules.{{module}}.ioc import {{Module}}Provider
+from app.modules.{{module}}.presentation.router import router
+from app.shared.module import Module
+
+{{module}}_module = Module(
+    name="{{module}}",
+    providers=[{{Module}}Provider()],
+    routers=[router],
+    map_tables=map_tables,
+    # Подписка на события других модулей:
+    # subscriptions={UserDeactivated: [SomeHandler]},
+)

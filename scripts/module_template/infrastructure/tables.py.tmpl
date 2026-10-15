@@ -1,0 +1,19 @@
+import sqlalchemy as sa
+
+from app.modules.{{module}}.domain.entities import {{Entity}}
+from app.shared.infrastructure.database import UtcDateTime, map_entity, metadata
+
+{{module}}_table = sa.Table(
+    "{{module}}",
+    metadata,
+    sa.Column("id", sa.Uuid, primary_key=True),
+    sa.Column("owner_id", sa.Uuid, sa.ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True),
+    sa.Column("title", sa.String(200), nullable=False),
+    sa.Column("description", sa.Text, nullable=True),
+    sa.Column("created_at", UtcDateTime, nullable=False),
+    sa.Column("updated_at", UtcDateTime, nullable=False),
+)
+
+
+def map_tables() -> None:
+    map_entity({{Entity}}, {{module}}_table)

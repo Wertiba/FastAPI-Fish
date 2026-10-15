@@ -1,0 +1,44 @@
+from typing import Any
+from uuid import UUID
+
+import sqlalchemy as sa
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.modules.{{module}}.application.ports import {{Entity}}Repository
+from app.modules.{{module}}.domain.entities import {{Entity}}
+from app.modules.{{module}}.infrastructure.tables import {{module}}_table as t
+from app.shared.application.pagination import Pagination
+
+
+class Sql{{Entity}}Repository({{Entity}}Repository):
+    def __init__(self, session: AsyncSession) -> None:
+        self._session = session
+
+    async def add(self, {{entity}}: {{Entity}}) -> None:
+        self._session.add({{entity}})
+        await self._session.flush()
+
+    async def get_by_id(self, {{entity}}_id: UUID) -> {{Entity}} | None:
+        return await self._session.get({{Entity}}, {{entity}}_id)
+
+    async def delete(self, {{entity}}: {{Entity}}) -> None:
+        await self._session.delete({{entity}})
+        await self._session.flush()
+
+    async def find(self, *, owner_id: UUID | None, pagination: Pagination) -> list[{{Entity}}]:
+        stmt = (
+            sa.select({{Entity}})
+            .where(*self._conditions(owner_id))
+            .order_by(t.c.created_at.desc())
+            .offset(pagination.offset)
+            .limit(pagination.limit)
+        )
+        return list(await self._session.scalars(stmt))
+
+    async def count(self, *, owner_id: UUID | None) -> int:
+        stmt = sa.select(sa.func.count()).select_from(t).where(*self._conditions(owner_id))
+        return (await self._session.scalar(stmt)) or 0
+
+    @staticmethod
+    def _conditions(owner_id: UUID | None) -> list[sa.ColumnElement[Any]]:
+        return [] if owner_id is None else [t.c.owner_id == owner_id]
