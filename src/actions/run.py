@@ -1,6 +1,6 @@
 import asyncio
 
-from app.actions.first_admin import create_admin
+from actions.first_admin import create_admin
 from app.infrastructure.database.db_helper import db_helper
 
 
