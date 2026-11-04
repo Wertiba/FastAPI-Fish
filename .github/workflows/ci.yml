@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main]
-  pull_request:
-    branches: [main]
+    branches-ignore: [main]  # main is covered by cd.yml, which calls this workflow
+  workflow_call:
+  workflow_dispatch:
 
 jobs:
   lint:

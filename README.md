@@ -79,7 +79,8 @@ together in a FastAPI project.
 │   └── export_openapi.py         Regenerates docs/api-docs.json from the live app
 ├── docs/
 │   └── api-docs.json             Exported OpenAPI spec for this project
-├── .github/workflows/ci.yml      CI: ruff check + pytest on push & PR
+├── .github/workflows/ci.yml      CI: ruff check + pytest on push to any branch except main
+├── .github/workflows/cd.yml      CD: on push to main — runs ci.yml, then deploy (stub)
 └── src/
     ├── .env.example               Template for local secrets/config (copy to .env)
     ├── entrypoint.sh              Container entrypoint: waits for Postgres, runs alembic, starts uvicorn
