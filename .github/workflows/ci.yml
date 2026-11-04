@@ -2,45 +2,41 @@ name: CI
 
 on:
   push:
-    branches: [main]
-  pull_request:
-    branches: [main]
+    branches-ignore: [main]  # main is covered by cd.yml, which calls this workflow
+  workflow_call:
+  workflow_dispatch:
 
 jobs:
   lint:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: src
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: astral-sh/setup-uv@v6
         with:
-          python-version: "3.13"
-      - run: pip install -r requirements.txt
-      - run: ruff check .
+          version: "0.9.16"
+          enable-cache: true
+      - run: uv sync --locked
+      - run: uv run ruff check .
 
   test:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: src
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: astral-sh/setup-uv@v6
         with:
-          python-version: "3.13"
-      - run: pip install -r requirements.txt
-      - run: cp .env.example .env
+          version: "0.9.16"
+          enable-cache: true
+      - run: uv sync --locked
+      - run: cp src/.env.example src/.env
       - name: Unit tests (in-memory SQLite)
-        run: python -m pytest -m "not integration" --cov=app --cov-report= -v
+        run: uv run python -m pytest -m "not integration" --cov=src/app --cov-report= -v
       - name: Integration tests (Testcontainers Postgres)
-        run: python -m pytest -m integration --cov=app --cov-append --cov-report=term-missing --cov-report=xml --cov-report=html -v
+        run: uv run python -m pytest -m integration --cov=src/app --cov-append --cov-report=term-missing --cov-report=xml --cov-report=html -v
       - name: Upload coverage report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report
           path: |
-            src/coverage.xml
-            src/htmlcov
+            coverage.xml
+            htmlcov

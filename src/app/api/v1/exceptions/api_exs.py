@@ -34,7 +34,7 @@ class EmailAlreadyExists(APIException):
 
 
 class ValidationFailed(APIException):
-    status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
+    status_code = status.HTTP_422_UNPROCESSABLE_CONTENT
     code = "VALIDATION_FAILED"
     message = "Some fields are not correct."
 

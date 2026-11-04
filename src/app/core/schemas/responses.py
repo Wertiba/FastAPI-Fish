@@ -1,10 +1,9 @@
 from typing import Any
-from uuid import UUID, uuid4
 
 from pydantic import Field
 
 from app.core.schemas.base import PyModel
-from app.core.utils import now_iso_z
+from app.core.utils import TimeHelper
 
 
 class MessageResponse(PyModel):
@@ -33,7 +32,7 @@ class FieldError(PyModel):
 class ValidationErrorResponse(PyModel):
     code: str = "VALIDATION_FAILED"
     message: str = "Some fields are not correct."
-    traceId: UUID = Field(default_factory=uuid4)
-    timestamp: str = Field(default_factory=now_iso_z)
+    traceId: str
+    timestamp: str = Field(default_factory=TimeHelper.now_iso_z)
     path: str
     fieldErrors: list[FieldError]

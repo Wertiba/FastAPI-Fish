@@ -1,4 +1,4 @@
-# src/tests/test_app_boot.py
+# tests/test_app_boot.py
 from fastapi.testclient import TestClient
 
 from app.main import app
@@ -14,7 +14,7 @@ def test_app_imports_and_liveness_responds():
 async def test_admin_bootstrap_runs_on_startup(client, db_session_factory):
     from sqlalchemy import select
 
-    from app.core.config import settings
+    from app.core.settings import settings
     from app.infrastructure.models import User
 
     async with db_session_factory() as session:

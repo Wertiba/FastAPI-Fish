@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
+REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
 def _find_bash() -> str | None:
@@ -52,7 +52,7 @@ def test_init_project_sh_renames_app_name_slug_db_and_volume(tmp_path):
     assert "path: logs/orders.log" in config_text
 
     env_text = (repo / "src" / ".env.example").read_text(encoding="utf-8")
-    assert "DB_NAME=orders" in env_text
+    assert "\nDB_URL=jdbc:postgresql://localhost:5432/orders\n" in env_text
     assert "POSTGRES_DB=orders" in env_text
 
     compose_text = (repo / "docker-compose.yml").read_text(encoding="utf-8")
@@ -74,7 +74,7 @@ def test_init_project_sh_requires_exactly_one_argument(tmp_path):
 
 
 def test_export_openapi_writes_valid_spec_with_known_routes(tmp_path):
-    output_path = tmp_path / "api-docs.json"
+    output_path = tmp_path / "openapi.json"
 
     result = subprocess.run(
         [sys.executable, str(REPO_ROOT / "actions" / "export_openapi.py"), "--out", str(output_path)],

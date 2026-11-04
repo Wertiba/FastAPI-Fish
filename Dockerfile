@@ -1,14 +1,18 @@
-FROM python:3.13-alpine3.19
+FROM python:3.13-alpine
+
+COPY --from=ghcr.io/astral-sh/uv:0.9.16 /uv /uvx /bin/
 
 WORKDIR /app
 
 RUN apk add --no-cache curl postgresql-client
 
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
+ENV PYTHONUNBUFFERED=1 \
+    UV_COMPILE_BYTECODE=1 \
+    UV_LINK_MODE=copy \
+    PATH="/app/.venv/bin:$PATH"
 
-COPY ./src/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+COPY uv.lock pyproject.toml .python-version ./
+RUN uv sync --locked --no-dev
 
 COPY ./src .
 RUN chmod +x ./entrypoint.sh

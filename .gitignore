@@ -1,4 +1,13 @@
 /.idea
 __pycache__/
+/local/
+
 *.pyc
+
 /src/.env
+/src/logs/
+
+.coverage
+/coverage.xml
+/htmlcov/
+.pytest_cache/

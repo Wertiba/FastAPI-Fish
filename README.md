@@ -51,7 +51,7 @@ together in a FastAPI project.
 2. Rename the project: run `./actions/init-project.sh orders` (or
    `.\actions\init-project.ps1 -NewName orders` on Windows). This updates everything derived
    from the project name — `app.name` in `configs/config.yaml`, the `logs/*.log` file name, the
-   default `DB_NAME`/`POSTGRES_DB` in `.env.example`, and the Postgres data volume name in
+   database name in `DB_URL`/`POSTGRES_DB` in `.env.example`, and the Postgres data volume name in
    `docker-compose.yml`. Review the diff, then delete both scripts under `actions/` once you're
    happy with the result.
 3. Copy `src/.env.example` to `src/.env` and fill in real values — it's git-ignored, so nothing
@@ -60,7 +60,7 @@ together in a FastAPI project.
    database `POSTGRES_DB` names automatically on first boot of a fresh volume (this is the
    official `postgres` image's built-in behavior — no extra script needed). For any other setup
    (local Postgres, an already-initialized volume, a remote database), create the database
-   named by `DB_NAME` yourself before starting the app.
+   named in `DB_URL` yourself before starting the app.
 5. Replace `src/alembic/versions/0001_initial_schema.py` with your own schema, or add new
    revisions on top of it with `alembic revision --autogenerate -m "..."` (run from `src/`).
 6. Swap out the `User`/`Auth` domain for your own entities, or build alongside it — the
@@ -71,7 +71,7 @@ together in a FastAPI project.
 
 ```
 .
-├── Dockerfile                    App image (python:3.13-alpine, installs requirements.txt)
+├── Dockerfile                    App image (python:3.13-alpine, installs deps from uv.lock)
 ├── docker-compose.yml            App + Postgres for local/full-stack runs
 ├── actions/
 │   ├── init-project.sh           Rename script (bash) — delete after use
@@ -79,7 +79,10 @@ together in a FastAPI project.
 │   └── export_openapi.py         Regenerates docs/api-docs.json from the live app
 ├── docs/
 │   └── api-docs.json             Exported OpenAPI spec for this project
-├── .github/workflows/ci.yml      CI: ruff check + pytest on push & PR
+├── .github/workflows/ci.yml      CI: ruff check + pytest on push to any branch except main
+├── .github/workflows/cd.yml      CD: on push to main — runs ci.yml, then deploy (stub)
+├── tests/                        pytest suite (in-memory SQLite; see Common Commands)
+├── pytest.ini                    pytest config (adds src/ to sys.path, so tests import `app`)
 └── src/
     ├── .env.example               Template for local secrets/config (copy to .env)
     ├── entrypoint.sh              Container entrypoint: waits for Postgres, runs alembic, starts uvicorn
@@ -107,7 +110,6 @@ together in a FastAPI project.
     │   │   ├── unit_of_work/         Transaction boundary wrapping the repositories
     │   │   └── database/             Async engine/session factory
     │   └── services/                 Business logic (AuthService, UserService, JWTService)
-    └── tests/                       pytest suite (in-memory SQLite; see Common Commands)
 ```
 
 ## Configuration
@@ -118,14 +120,14 @@ and `docker-compose.yml`:
 
 | Variable | Purpose |
 |---|---|
-| `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` | Postgres connection |
+| `DB_URL` | Postgres location, JDBC-style (`jdbc:postgresql://localhost:5432/mydb`) or a plain `postgresql://` URL. The async driver comes from `db.driver` in `config.yaml`. Use host `db` when the app runs inside `docker-compose`. |
+| `DB_USER`, `DB_PASSWORD` | Postgres credentials (override any embedded in `DB_URL`) |
 | `APP_SECURITY_JWT_SECRET` | Secret used to sign JWT access/refresh tokens |
 | `APP_SECURITY_ACCESS_TOKEN_EXPIRATION` | Access token TTL (default `15m`) |
 | `APP_SECURITY_REFRESH_TOKEN_EXPIRATION` | Refresh token TTL (default `30d`) |
 | `APP_ADMIN_EMAIL`, `APP_ADMIN_PASSWORD`, `APP_ADMIN_FULLNAME` | Bootstrap admin account, created automatically on every startup if it doesn't exist yet |
 | `APP_CORS_ALLOWED_ORIGINS` | Comma-separated list of allowed CORS origins (default `http://localhost,http://localhost:8080`) |
 | `APP_COOKIE_SECURE` | Whether the refresh-token cookie gets the `Secure` attribute (default `true`). Set to `false` for local/HTTP-only dev — browsers silently drop `Secure` cookies over plain HTTP, which otherwise looks like login "not persisting". |
-| `CONFIG_PATH` | Path to `config.yaml` inside the container (leave as-is for local/dev use) |
 | `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` | Credentials `docker-compose.yml`'s Postgres service boots with |
 
 Running the unit-test suite does **not** require Docker or a running Postgres — tests use an
@@ -137,33 +139,33 @@ kept 10 days, gzip-compressed) under `src/`.
 
 ## Common Commands
 
-Run everything from the `src/` directory unless noted otherwise.
+Run app/alembic commands from the `src/` directory; pytest and ruff from the repo root.
 
 ```bash
-# Install dependencies
-pip install -r requirements.txt
+# Install dependencies (creates .venv in the repo root from uv.lock)
+uv sync
 
 # Run the app locally (needs a reachable Postgres + a populated .env)
-python -m app.run
+uv run python -m app.run
 
 # Apply database migrations
-alembic upgrade head
+uv run alembic upgrade head
 
-# Run the test suite (in-memory SQLite, no Docker required)
-python -m pytest
+# Run the test suite from the repo root (in-memory SQLite, no Docker required)
+uv run python -m pytest
 
 # Run tests with a coverage report (terminal + HTML in htmlcov/)
-python -m pytest --cov=app --cov-report=term-missing --cov-report=html
+uv run python -m pytest --cov=src/app --cov-report=term-missing --cov-report=html
 
 # Run one test file or test
-python -m pytest tests/test_auth_endpoints.py -v
-python -m pytest tests/test_auth_endpoints.py::test_login_returns_200_and_sets_refresh_cookie -v
+uv run python -m pytest tests/test_auth_endpoints.py -v
+uv run python -m pytest tests/test_auth_endpoints.py::test_login_returns_200_and_sets_refresh_cookie -v
 
 # Check formatting/lint
-ruff check .
+uv run ruff check .
 
 # Auto-fix formatting issues
-ruff check . --fix
+uv run ruff check . --fix
 
 # Run the full stack (app + Postgres) in Docker, from the repo root
 docker compose up --build

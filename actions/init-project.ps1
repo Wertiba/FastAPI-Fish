@@ -16,7 +16,7 @@ $configPath = Join-Path $RepoRoot "src\configs\config.yaml"
 
 $envExamplePath = Join-Path $RepoRoot "src\.env.example"
 (Get-Content $envExamplePath) `
-    -replace '^DB_NAME=.*', "DB_NAME=$Slug" `
+    -replace '^(#?DB_URL=[^?]*/)[^/?]*', ('${1}' + $Slug) `
     -replace '^POSTGRES_DB=.*', "POSTGRES_DB=$Slug" |
     Set-Content -Encoding utf8 $envExamplePath
 
@@ -27,4 +27,4 @@ $composePath = Join-Path $RepoRoot "docker-compose.yml"
 Write-Host "[init-project] Done. Review the diff (git diff), then:"
 Write-Host "  1. Copy src\.env.example to src\.env and fill in real secrets."
 Write-Host "  2. Delete this script and actions/init-project.sh once you're happy with the result."
-Write-Host "  3. Run the test suite: cd src; python -m pytest"
+Write-Host "  3. Run the test suite: python -m pytest"

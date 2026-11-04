@@ -24,7 +24,6 @@ logging:
 
 token:
   default_type: bearer
-  schema: argon2
   access_token:
     algorithm: HS256
 

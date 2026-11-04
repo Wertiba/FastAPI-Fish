@@ -1,13 +1,13 @@
 import hashlib
 import uuid
-from datetime import UTC, datetime, timedelta
 
 import jwt
-from passlib.context import CryptContext
+from argon2 import PasswordHasher
+from argon2.exceptions import InvalidHashError, VerificationError
 
-from app.core.config import settings
 from app.core.exceptions.user_exs import InvalidCredentialsError
-from app.core.utils import Singleton, parse_duration_seconds
+from app.core.settings import settings
+from app.core.utils import Singleton, TimeHelper
 
 ACCESS_TOKEN_TYPE = "access"  # noqa: S105 -- JWT "type" claim discriminator, not a credential
 REFRESH_TOKEN_TYPE = "refresh"  # noqa: S105 -- JWT "type" claim discriminator, not a credential
@@ -15,26 +15,31 @@ REFRESH_TOKEN_TYPE = "refresh"  # noqa: S105 -- JWT "type" claim discriminator, 
 
 class JWTService(Singleton):
     def __init__(self):
-        self.pwd_context = CryptContext(schemes=[settings.token.SCHEMA], deprecated="auto")
+        self.password_hasher = PasswordHasher()  # argon2id, RFC 9106 low-memory profile
         self.secret_key = settings.APP_SECURITY_JWT_SECRET
         self.algorithm = settings.token.access_token.ALGORITHM
-        self.access_expire_seconds = parse_duration_seconds(settings.APP_SECURITY_ACCESS_TOKEN_EXPIRATION)
-        self.refresh_expire_seconds = parse_duration_seconds(settings.APP_SECURITY_REFRESH_TOKEN_EXPIRATION)
+        access_ttl = settings.get("APP_SECURITY_ACCESS_TOKEN_EXPIRATION", "15m")
+        refresh_ttl = settings.get("APP_SECURITY_REFRESH_TOKEN_EXPIRATION", "30d")
+        self.access_expire_seconds = TimeHelper.parse_duration(access_ttl)
+        self.refresh_expire_seconds = TimeHelper.parse_duration(refresh_ttl)
 
     def verify_password(self, plain_password: str, hashed_password: str) -> bool:
-        return self.pwd_context.verify(plain_password, hashed_password)
+        try:
+            return self.password_hasher.verify(hashed_password, plain_password)
+        except (VerificationError, InvalidHashError):
+            return False
 
     def get_password_hash(self, password: str) -> str:
-        return self.pwd_context.hash(password)
+        return self.password_hasher.hash(password)
 
     def _create_token(self, subject: str, token_type: str, expire_seconds: int) -> str:
-        now = datetime.now(UTC)
+        now = TimeHelper.now_utc()
         payload = {
             "sub": subject,
             "type": token_type,
             "jti": str(uuid.uuid4()),
             "iat": int(now.timestamp()),
-            "exp": int((now + timedelta(seconds=expire_seconds)).timestamp()),
+            "exp": int(now.timestamp()) + expire_seconds,
         }
         return jwt.encode(payload, self.secret_key, algorithm=self.algorithm)
 

@@ -1,4 +1,3 @@
-from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
 from app.core.enums import UserRole
@@ -16,20 +15,12 @@ from app.core.schemas.user import (
     UserReadResponse,
     UserRegisterBody,
 )
-from app.core.utils import as_aware_utc
+from app.core.utils import TimeHelper
 from app.infrastructure.models import RefreshToken, User
 from app.infrastructure.unit_of_work import UnitOfWork
 from app.services.jwt_service import ACCESS_TOKEN_TYPE, REFRESH_TOKEN_TYPE, JWTService
 
-# Lazily-computed hash of a fixed dummy password, verified against on the
-# unknown-email login path so it takes roughly as long as the wrong-password
-# path (avoids a timing oracle that would let a caller distinguish "no such
-# user" from "wrong password" by response latency).
 _DUMMY_PASSWORD_HASH: str | None = None
-
-
-def _expiry(seconds: int) -> datetime:
-    return datetime.now(UTC) + timedelta(seconds=seconds)
 
 
 class AuthService:
@@ -53,10 +44,6 @@ class AuthService:
     async def _authenticate_user(self, email: str, password: str) -> User:
         user = await self.uow.user_repo.get_by_email(email)
         if user is None:
-            # Verify against a dummy hash so this path takes roughly the same
-            # time as the wrong-password path below, and raise the same
-            # exception as a wrong password so callers can't enumerate emails
-            # by response status or timing.
             global _DUMMY_PASSWORD_HASH
             if _DUMMY_PASSWORD_HASH is None:
                 _DUMMY_PASSWORD_HASH = self.jwt_service.get_password_hash("dummy-password-for-timing")
@@ -77,7 +64,7 @@ class AuthService:
             RefreshToken(
                 user_id=user.id,
                 hashed_token=self.jwt_service.hash_token(refresh_token),
-                expires_at=_expiry(max_age),
+                expires_at=TimeHelper.after(max_age),
             )
         )
 
@@ -122,7 +109,7 @@ class AuthService:
             hashed = self.jwt_service.hash_token(raw_refresh_token)
 
             stored = await self.uow.refresh_token_repo.get_by_user_and_hash(user_id, hashed)
-            if stored is None or as_aware_utc(stored.expires_at) < datetime.now(UTC):
+            if stored is None or TimeHelper.to_utc(stored.expires_at) < TimeHelper.now_utc():
                 raise InvalidCredentialsError
 
             user = await self.uow.user_repo.get_by_id(user_id)
@@ -139,7 +126,7 @@ class AuthService:
                 RefreshToken(
                     user_id=user.id,
                     hashed_token=self.jwt_service.hash_token(new_refresh_token),
-                    expires_at=_expiry(max_age),
+                    expires_at=TimeHelper.after(max_age),
                 )
             )
 

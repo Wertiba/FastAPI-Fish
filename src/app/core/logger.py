@@ -6,7 +6,7 @@ from typing import Any
 
 from loguru import logger
 
-from app.core.config import settings
+from app.core.settings import settings
 from app.core.utils import Singleton
 
 

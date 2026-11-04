@@ -1,11 +1,12 @@
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime
 
 from sqlalchemy import ForeignKey, Index, String
 from sqlalchemy.dialects.postgresql import TIMESTAMP
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import Mapped, mapped_column
 
+from app.core.utils import TimeHelper
 from app.infrastructure.models.base import Base
 
 
@@ -23,5 +24,5 @@ class RefreshToken(Base):
     created_at: Mapped[datetime] = mapped_column(
         TIMESTAMP(timezone=True, precision=6),
         nullable=False,
-        default=lambda: datetime.now(timezone.utc),
+        default=TimeHelper.now_utc,
     )

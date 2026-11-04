@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime
 
 from sqlalchemy import Boolean, ForeignKey, String
 from sqlalchemy import Enum as SAEnum
@@ -8,6 +8,7 @@ from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.enums import UserRole
+from app.core.utils import TimeHelper
 from app.infrastructure.models.base import Base
 
 
@@ -35,12 +36,12 @@ class User(Base):
     created_at: Mapped[datetime] = mapped_column(
         TIMESTAMP(timezone=True, precision=6),
         nullable=False,
-        default=lambda: datetime.now(timezone.utc),
+        default=TimeHelper.now_utc,
     )
     updated_at: Mapped[datetime] = mapped_column(
         TIMESTAMP(timezone=True, precision=6),
         nullable=False,
-        default=lambda: datetime.now(timezone.utc),
+        default=TimeHelper.now_utc,
     )
 
     creator: Mapped["User | None"] = relationship(remote_side=[id])
