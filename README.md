@@ -139,7 +139,7 @@ kept 10 days, gzip-compressed) under `src/`.
 
 ## Common Commands
 
-Run app/alembic/ruff commands from the `src/` directory and pytest from the repo root.
+Run app/alembic commands from the `src/` directory; pytest and ruff from the repo root.
 
 ```bash
 # Install dependencies (creates .venv in the repo root from uv.lock)
