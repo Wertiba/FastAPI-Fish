@@ -23,3 +23,9 @@ def test_cors_allows_configured_origin(client):
 def test_cors_rejects_unconfigured_origin(client):
     response = client.get("/health/liveness", headers={"Origin": "http://evil.example"})
     assert "access-control-allow-origin" not in {k.lower() for k in response.headers}
+
+
+def test_validation_error_accepts_non_uuid_trace_id(client):
+    response = client.post("/api/v1/auth/login", json={}, headers={"X-Trace-Id": "my-trace-123"})
+    assert response.status_code == 422
+    assert response.json()["traceId"] == "my-trace-123"

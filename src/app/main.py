@@ -19,6 +19,7 @@ async def lifespan(_: FastAPI):
     async with db_helper.session_factory() as session:
         await create_admin(session)
     yield
+    await db_helper.dispose()
 
 
 app = FastAPI(lifespan=lifespan)

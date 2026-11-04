@@ -1,5 +1,4 @@
 from typing import Any
-from uuid import UUID, uuid4
 
 from pydantic import Field
 
@@ -33,7 +32,7 @@ class FieldError(PyModel):
 class ValidationErrorResponse(PyModel):
     code: str = "VALIDATION_FAILED"
     message: str = "Some fields are not correct."
-    traceId: UUID = Field(default_factory=uuid4)
+    traceId: str
     timestamp: str = Field(default_factory=TimeHelper.now_iso_z)
     path: str
     fieldErrors: list[FieldError]
