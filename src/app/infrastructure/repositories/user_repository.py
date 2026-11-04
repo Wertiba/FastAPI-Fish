@@ -1,4 +1,3 @@
-from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID
 
@@ -8,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions.base import RepositoryError
 from app.core.schemas.user import UserFilterQuery
+from app.core.utils import TimeHelper
 from app.infrastructure.models import User
 from app.infrastructure.repositories.base_repo import BaseRepository
 
@@ -25,7 +25,7 @@ class UserRepository(BaseRepository[User]):
             raise RepositoryError("Database error") from e
 
     async def update(self, user_id: UUID, data: dict[str, Any]) -> User | None:
-        data["updated_at"] = datetime.now(UTC)
+        data["updated_at"] = TimeHelper.now_utc()
         return await super().update(user_id, data)
 
     async def get_filtered(self, filters: UserFilterQuery, offset: int, limit: int) -> list[User]:

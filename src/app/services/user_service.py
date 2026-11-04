@@ -1,4 +1,3 @@
-from datetime import UTC, datetime
 from uuid import UUID
 
 from app.core.enums import UserRole
@@ -11,6 +10,7 @@ from app.core.schemas.user import (
     UserReadResponse,
     UserUpdateBody,
 )
+from app.core.utils import TimeHelper
 from app.core.utils.paginated import Page, PaginationParams
 from app.infrastructure.models import User
 from app.infrastructure.unit_of_work import UnitOfWork
@@ -100,5 +100,5 @@ class UserService:
             if not user:
                 raise UserNotFoundError
 
-            await self.uow.user_repo.deactivate(user_id, is_active=False, updated_at=datetime.now(UTC))
+            await self.uow.user_repo.deactivate(user_id, is_active=False, updated_at=TimeHelper.now_utc())
             await self.uow.refresh_token_repo.delete_all_for_user(user_id)

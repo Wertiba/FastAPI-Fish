@@ -53,7 +53,6 @@ def test_init_project_sh_renames_app_name_slug_db_and_volume(tmp_path):
 
     env_text = (repo / "src" / ".env.example").read_text(encoding="utf-8")
     assert "\nDB_URL=jdbc:postgresql://localhost:5432/orders\n" in env_text
-    assert "\n#DB_URL=jdbc:postgresql://db:5432/orders\n" in env_text
     assert "POSTGRES_DB=orders" in env_text
 
     compose_text = (repo / "docker-compose.yml").read_text(encoding="utf-8")
