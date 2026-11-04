@@ -37,7 +37,6 @@ dependencies = [
     "markdown-it-py==4.0.0",
     "markupsafe==3.0.3",
     "mdurl==0.1.2",
-    "passlib==1.7.4",
     "prometheus-client==0.21.1",
     "pycparser==2.23",
     "pydantic==2.12.5",

@@ -1,4 +1,3 @@
-from passlib.hash import argon2
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -6,6 +5,7 @@ from app.core.enums import UserRole
 from app.core.logger import Logger
 from app.core.settings import settings
 from app.infrastructure.models.user import User
+from app.services.jwt_service import JWTService
 
 
 async def create_admin(session: AsyncSession):
@@ -22,7 +22,7 @@ async def create_admin(session: AsyncSession):
 
     new_admin = User(
         email=email,
-        password=argon2.hash(settings.APP_ADMIN_PASSWORD),
+        password=JWTService().get_password_hash(settings.APP_ADMIN_PASSWORD),
         full_name=settings.APP_ADMIN_FULLNAME,
         role=UserRole.ADMIN,
         is_active=True,

@@ -57,6 +57,14 @@ def test_password_hash_roundtrip(jwt_service):
     assert not jwt_service.verify_password("wrong", hashed)
 
 
+def test_verify_password_returns_false_for_malformed_hash(jwt_service):
+    assert not jwt_service.verify_password("s3cret123", "not-an-argon2-hash")
+
+
+def test_password_hash_is_argon2id(jwt_service):
+    assert jwt_service.get_password_hash("s3cret123").startswith("$argon2id$")
+
+
 def test_expire_seconds_come_from_env_vars(jwt_service):
     assert jwt_service.access_expire_seconds == 15 * 60
     assert jwt_service.refresh_expire_seconds == 30 * 86400
