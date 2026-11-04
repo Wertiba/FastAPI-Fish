@@ -6,9 +6,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.actions.first_admin import create_admin
 from app.api import ops_router, v1_router
 from app.api.v1.exceptions.handlers import register_exception_handlers
-from app.core.config import settings
 from app.core.logger import Logger
 from app.core.middleware.trace_id import TraceIdMiddleware
+from app.core.settings import settings
 from app.infrastructure.database.db_helper import db_helper
 
 logger = Logger()

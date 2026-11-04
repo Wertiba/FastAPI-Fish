@@ -1,6 +1,6 @@
 from fastapi import Response
 
-from app.core.config import settings
+from app.core.settings import settings
 
 REFRESH_COOKIE_NAME = "refreshToken"
 

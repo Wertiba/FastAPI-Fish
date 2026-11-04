@@ -2,9 +2,9 @@ from passlib.hash import argon2
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.config import settings
 from app.core.enums import UserRole
 from app.core.logger import Logger
+from app.core.settings import settings
 from app.infrastructure.models.user import User
 
 

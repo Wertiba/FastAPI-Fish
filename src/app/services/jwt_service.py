@@ -5,8 +5,8 @@ from datetime import UTC, datetime, timedelta
 import jwt
 from passlib.context import CryptContext
 
-from app.core.config import settings
 from app.core.exceptions.user_exs import InvalidCredentialsError
+from app.core.settings import settings
 from app.core.utils import Singleton, parse_duration_seconds
 
 ACCESS_TOKEN_TYPE = "access"  # noqa: S105 -- JWT "type" claim discriminator, not a credential
