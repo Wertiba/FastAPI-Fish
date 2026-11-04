@@ -18,8 +18,10 @@ class JWTService(Singleton):
         self.pwd_context = CryptContext(schemes=[settings.token.SCHEMA], deprecated="auto")
         self.secret_key = settings.APP_SECURITY_JWT_SECRET
         self.algorithm = settings.token.access_token.ALGORITHM
-        self.access_expire_seconds = parse_duration_seconds(settings.APP_SECURITY_ACCESS_TOKEN_EXPIRATION)
-        self.refresh_expire_seconds = parse_duration_seconds(settings.APP_SECURITY_REFRESH_TOKEN_EXPIRATION)
+        access_ttl = settings.get("APP_SECURITY_ACCESS_TOKEN_EXPIRATION", "15m")
+        refresh_ttl = settings.get("APP_SECURITY_REFRESH_TOKEN_EXPIRATION", "30d")
+        self.access_expire_seconds = parse_duration_seconds(access_ttl)
+        self.refresh_expire_seconds = parse_duration_seconds(refresh_ttl)
 
     def verify_password(self, plain_password: str, hashed_password: str) -> bool:
         return self.pwd_context.verify(plain_password, hashed_password)

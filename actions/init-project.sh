@@ -5,7 +5,7 @@ usage() {
   echo "Usage: ./actions/init-project.sh <new-app-name>"
   echo "  e.g. ./actions/init-project.sh Orders"
   echo "  Renames app.name in configs/config.yaml, the log file name, the default"
-  echo "  DB_NAME/POSTGRES_DB in .env.example, and the Postgres volume name in"
+  echo "  database name in DB_URL/POSTGRES_DB in .env.example, and the Postgres volume name in"
   echo "  docker-compose.yml. Does not touch your local .env (git-ignored) or rename"
   echo "  any Python package/module."
   exit 1
@@ -21,7 +21,7 @@ echo "[init-project] app.name -> '${NEW_NAME}', slug -> '${SLUG}'"
 
 sed -i.bak "s/^  name: .*/  name: ${NEW_NAME}/" "${REPO_ROOT}/src/configs/config.yaml"
 sed -i.bak "s#path: logs/app\.log#path: logs/${SLUG}.log#" "${REPO_ROOT}/src/configs/config.yaml"
-sed -i.bak "s/^DB_NAME=.*/DB_NAME=${SLUG}/" "${REPO_ROOT}/src/.env.example"
+sed -i.bak "s|^\(#\{0,1\}DB_URL=[^?]*/\)[^/?]*|\1${SLUG}|" "${REPO_ROOT}/src/.env.example"
 sed -i.bak "s/^POSTGRES_DB=.*/POSTGRES_DB=${SLUG}/" "${REPO_ROOT}/src/.env.example"
 sed -i.bak "s/db_data:/${SLUG}_db_data:/g" "${REPO_ROOT}/docker-compose.yml"
 

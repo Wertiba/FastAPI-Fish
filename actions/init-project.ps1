@@ -16,7 +16,7 @@ $configPath = Join-Path $RepoRoot "src\configs\config.yaml"
 
 $envExamplePath = Join-Path $RepoRoot "src\.env.example"
 (Get-Content $envExamplePath) `
-    -replace '^DB_NAME=.*', "DB_NAME=$Slug" `
+    -replace '^(#?DB_URL=[^?]*/)[^/?]*', ('${1}' + $Slug) `
     -replace '^POSTGRES_DB=.*', "POSTGRES_DB=$Slug" |
     Set-Content -Encoding utf8 $envExamplePath
 

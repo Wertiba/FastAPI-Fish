@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from dynaconf import Dynaconf
+from sqlalchemy.engine import make_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 CONFIG_FILE = BASE_DIR / "configs" / "config.yaml"
@@ -19,14 +20,12 @@ settings = Dynaconf(
 
 
 def build_postgres_url() -> str:
-    return (
-        f"{settings.db.driver}://"
-        f"{settings.db_user}:"
-        f"{settings.db_password}@"
-        f"{settings.db_host}:"
-        f"{settings.db_port}/"
-        f"{settings.db_name}"
-    )
+    url = make_url(str(settings.DB_URL).removeprefix("jdbc:")).set(drivername=settings.db.driver)
+    if settings.get("DB_USER"):
+        url = url.set(username=str(settings.DB_USER))
+    if settings.get("DB_PASSWORD"):
+        url = url.set(password=str(settings.DB_PASSWORD))
+    return url.render_as_string(hide_password=False)
 
 
 settings.set("POSTGRES_URL", build_postgres_url())

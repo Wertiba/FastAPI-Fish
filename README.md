@@ -51,7 +51,7 @@ together in a FastAPI project.
 2. Rename the project: run `./actions/init-project.sh orders` (or
    `.\actions\init-project.ps1 -NewName orders` on Windows). This updates everything derived
    from the project name — `app.name` in `configs/config.yaml`, the `logs/*.log` file name, the
-   default `DB_NAME`/`POSTGRES_DB` in `.env.example`, and the Postgres data volume name in
+   database name in `DB_URL`/`POSTGRES_DB` in `.env.example`, and the Postgres data volume name in
    `docker-compose.yml`. Review the diff, then delete both scripts under `actions/` once you're
    happy with the result.
 3. Copy `src/.env.example` to `src/.env` and fill in real values — it's git-ignored, so nothing
@@ -60,7 +60,7 @@ together in a FastAPI project.
    database `POSTGRES_DB` names automatically on first boot of a fresh volume (this is the
    official `postgres` image's built-in behavior — no extra script needed). For any other setup
    (local Postgres, an already-initialized volume, a remote database), create the database
-   named by `DB_NAME` yourself before starting the app.
+   named in `DB_URL` yourself before starting the app.
 5. Replace `src/alembic/versions/0001_initial_schema.py` with your own schema, or add new
    revisions on top of it with `alembic revision --autogenerate -m "..."` (run from `src/`).
 6. Swap out the `User`/`Auth` domain for your own entities, or build alongside it — the
@@ -120,14 +120,14 @@ and `docker-compose.yml`:
 
 | Variable | Purpose |
 |---|---|
-| `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` | Postgres connection |
+| `DB_URL` | Postgres location, JDBC-style (`jdbc:postgresql://localhost:5432/mydb`) or a plain `postgresql://` URL. The async driver comes from `db.driver` in `config.yaml`. Use host `db` when the app runs inside `docker-compose`. |
+| `DB_USER`, `DB_PASSWORD` | Postgres credentials (override any embedded in `DB_URL`) |
 | `APP_SECURITY_JWT_SECRET` | Secret used to sign JWT access/refresh tokens |
 | `APP_SECURITY_ACCESS_TOKEN_EXPIRATION` | Access token TTL (default `15m`) |
 | `APP_SECURITY_REFRESH_TOKEN_EXPIRATION` | Refresh token TTL (default `30d`) |
 | `APP_ADMIN_EMAIL`, `APP_ADMIN_PASSWORD`, `APP_ADMIN_FULLNAME` | Bootstrap admin account, created automatically on every startup if it doesn't exist yet |
 | `APP_CORS_ALLOWED_ORIGINS` | Comma-separated list of allowed CORS origins (default `http://localhost,http://localhost:8080`) |
 | `APP_COOKIE_SECURE` | Whether the refresh-token cookie gets the `Secure` attribute (default `true`). Set to `false` for local/HTTP-only dev — browsers silently drop `Secure` cookies over plain HTTP, which otherwise looks like login "not persisting". |
-| `CONFIG_PATH` | Path to `config.yaml` inside the container (leave as-is for local/dev use) |
 | `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` | Credentials `docker-compose.yml`'s Postgres service boots with |
 
 Running the unit-test suite does **not** require Docker or a running Postgres — tests use an

@@ -1,11 +1,19 @@
 #!/bin/sh
 set -e
 
-echo "[entrypoint] ENV DB_HOST=${DB_HOST:-} DB_PORT=${DB_PORT:-5432} DB_USER=${DB_USER:-} DB_NAME=${DB_NAME:-}"
+# DB_URL: jdbc:postgresql://host:5432/db or postgresql://[user:pass@]host:5432/db
+if [ -n "${DB_URL:-}" ]; then
+  _hostport="${DB_URL#*://}"    # strip scheme
+  _hostport="${_hostport%%/*}"  # strip /dbname?params
+  _hostport="${_hostport##*@}"  # strip user:pass@
+  DB_WAIT_HOST="${_hostport%%:*}"
+  case "$_hostport" in
+    *:*) DB_WAIT_PORT="${_hostport##*:}" ;;
+    *)   DB_WAIT_PORT=5432 ;;
+  esac
 
-if [ -n "${DB_HOST:-}" ]; then
-  echo "[entrypoint] Waiting for Postgres at ${DB_HOST}:${DB_PORT:-5432} ..."
-  until pg_isready -h "${DB_HOST}" -p "${DB_PORT:-5432}" -U "${DB_USER:-postgres}" >/dev/null 2>&1; do
+  echo "[entrypoint] Waiting for Postgres at ${DB_WAIT_HOST}:${DB_WAIT_PORT} ..."
+  until pg_isready -h "${DB_WAIT_HOST}" -p "${DB_WAIT_PORT}" -U "${DB_USER:-postgres}" >/dev/null 2>&1; do
     printf '.'
     sleep 1
   done
