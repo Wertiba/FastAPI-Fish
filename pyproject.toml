@@ -79,6 +79,7 @@ src = ["src"]
 extend-exclude = [
     "tests",
     "src/alembic",
+    ".claude"
 ]
 
 [tool.ruff.lint]

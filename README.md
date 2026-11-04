@@ -88,10 +88,10 @@ together in a FastAPI project.
     ├── entrypoint.sh              Container entrypoint: waits for Postgres, runs alembic, starts uvicorn
     ├── alembic/                   Alembic env + versioned migrations
     ├── configs/config.yaml        Base app config (env-var driven via Dynaconf)
+    ├── actions/                   Startup actions (admin bootstrap) + standalone reseed script
     ├── app/
     │   ├── main.py                FastAPI app factory, lifespan (admin bootstrap), middleware
     │   ├── run.py                 Local dev entry point (uvicorn)
-    │   ├── actions/                Startup actions (admin bootstrap) + standalone reseed script
     │   ├── api/
     │   │   ├── endpoints/           Health, Metrics routers — unversioned, mounted at the app root
     │   │   ├── v1/endpoints/       Auth, Users routers
