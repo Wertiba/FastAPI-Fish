@@ -12,8 +12,8 @@ def main() -> None:
     parser.add_argument(
         "--out",
         type=Path,
-        default=REPO_ROOT / "docs" / "api-docs.json",
-        help="Output path (default: docs/api-docs.json)",
+        default=REPO_ROOT / "docs" / "openapi.json",
+        help="Output path (default: docs/openapi.json)",
     )
     args = parser.parse_args()
 

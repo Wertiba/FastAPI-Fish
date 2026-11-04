@@ -74,7 +74,7 @@ def test_init_project_sh_requires_exactly_one_argument(tmp_path):
 
 
 def test_export_openapi_writes_valid_spec_with_known_routes(tmp_path):
-    output_path = tmp_path / "api-docs.json"
+    output_path = tmp_path / "openapi.json"
 
     result = subprocess.run(
         [sys.executable, str(REPO_ROOT / "actions" / "export_openapi.py"), "--out", str(output_path)],
