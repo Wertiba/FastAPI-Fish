@@ -71,7 +71,7 @@ together in a FastAPI project.
 
 ```
 .
-├── Dockerfile                    App image (python:3.13-alpine, installs requirements.txt)
+├── Dockerfile                    App image (python:3.13-alpine, installs deps from uv.lock)
 ├── docker-compose.yml            App + Postgres for local/full-stack runs
 ├── actions/
 │   ├── init-project.sh           Rename script (bash) — delete after use
@@ -140,30 +140,30 @@ kept 10 days, gzip-compressed) under `src/`.
 Run everything from the `src/` directory unless noted otherwise.
 
 ```bash
-# Install dependencies
-pip install -r requirements.txt
+# Install dependencies (creates .venv in the repo root from uv.lock)
+uv sync
 
 # Run the app locally (needs a reachable Postgres + a populated .env)
-python -m app.run
+uv run python -m app.run
 
 # Apply database migrations
-alembic upgrade head
+uv run alembic upgrade head
 
 # Run the test suite (in-memory SQLite, no Docker required)
-python -m pytest
+uv run python -m pytest
 
 # Run tests with a coverage report (terminal + HTML in htmlcov/)
-python -m pytest --cov=app --cov-report=term-missing --cov-report=html
+uv run python -m pytest --cov=app --cov-report=term-missing --cov-report=html
 
 # Run one test file or test
-python -m pytest tests/test_auth_endpoints.py -v
-python -m pytest tests/test_auth_endpoints.py::test_login_returns_200_and_sets_refresh_cookie -v
+uv run python -m pytest tests/test_auth_endpoints.py -v
+uv run python -m pytest tests/test_auth_endpoints.py::test_login_returns_200_and_sets_refresh_cookie -v
 
 # Check formatting/lint
-ruff check .
+uv run ruff check .
 
 # Auto-fix formatting issues
-ruff check . --fix
+uv run ruff check . --fix
 
 # Run the full stack (app + Postgres) in Docker, from the repo root
 docker compose up --build

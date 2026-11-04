@@ -1,4 +1,5 @@
 # src/tests/test_repo_hygiene.py
+import tomllib
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -10,11 +11,14 @@ def test_garbage_files_are_gone():
     assert not (REPO_ROOT / "src" / "tests" / "test_auth_and_users.py").exists()
 
 
-def test_requirements_txt_is_utf8_and_pruned():
-    text = (REPO_ROOT / "src" / "requirements.txt").read_text(encoding="utf-8")
-    for banned in ("aioredis", "fastapi-cache2", "hiredis", "sentry-sdk", "pendulum", "fastar", "fastapi-swagger-dark"):
-        assert banned not in text, f"{banned} should have been pruned"
-    assert "SQLAlchemy" in text
+def test_dependencies_are_managed_by_uv_and_pruned():
+    assert not (REPO_ROOT / "src" / "requirements.txt").exists()
+    assert (REPO_ROOT / "uv.lock").exists()
+    with (REPO_ROOT / "pyproject.toml").open("rb") as f:
+        deps = " ".join(tomllib.load(f)["project"]["dependencies"]).lower()
+    for banned in ("aioredis", "fastapi-cache2", "hiredis", "sentry-sdk", "pendulum", "fastar", "fastapi-swagger-dark", "sqlmodel"):
+        assert banned not in deps, f"{banned} should have been pruned"
+    assert "sqlalchemy" in deps
 
 
 def test_config_yaml_has_no_unrelated_project_cruft():
