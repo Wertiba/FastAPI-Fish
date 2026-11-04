@@ -1,4 +1,4 @@
-# src/tests/test_models.py
+# tests/test_models.py
 from sqlalchemy import create_engine, inspect
 
 from app.core.enums import UserRole

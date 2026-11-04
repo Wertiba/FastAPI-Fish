@@ -1,8 +1,8 @@
-# src/tests/test_repo_hygiene.py
+# tests/test_repo_hygiene.py
 import tomllib
 from pathlib import Path
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
+REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
 def test_garbage_files_are_gone():

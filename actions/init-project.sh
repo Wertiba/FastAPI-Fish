@@ -30,4 +30,4 @@ find "${REPO_ROOT}/src/configs" "${REPO_ROOT}/src" "${REPO_ROOT}" -maxdepth 1 -n
 echo "[init-project] Done. Review the diff (git diff), then:"
 echo "  1. Copy src/.env.example to src/.env and fill in real secrets."
 echo "  2. Delete this script and actions/init-project.ps1 once you're happy with the result."
-echo "  3. Run the test suite: cd src && python -m pytest"
+echo "  3. Run the test suite: python -m pytest"

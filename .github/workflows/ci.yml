@@ -23,9 +23,6 @@ jobs:
 
   test:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: src
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
@@ -33,16 +30,16 @@ jobs:
           version: "0.9.16"
           enable-cache: true
       - run: uv sync --locked
-      - run: cp .env.example .env
+      - run: cp src/.env.example src/.env
       - name: Unit tests (in-memory SQLite)
-        run: uv run python -m pytest -m "not integration" --cov=app --cov-report= -v
+        run: uv run python -m pytest -m "not integration" --cov=src/app --cov-report= -v
       - name: Integration tests (Testcontainers Postgres)
-        run: uv run python -m pytest -m integration --cov=app --cov-append --cov-report=term-missing --cov-report=xml --cov-report=html -v
+        run: uv run python -m pytest -m integration --cov=src/app --cov-append --cov-report=term-missing --cov-report=xml --cov-report=html -v
       - name: Upload coverage report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report
           path: |
-            src/coverage.xml
-            src/htmlcov
+            coverage.xml
+            htmlcov

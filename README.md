@@ -81,6 +81,8 @@ together in a FastAPI project.
 │   └── api-docs.json             Exported OpenAPI spec for this project
 ├── .github/workflows/ci.yml      CI: ruff check + pytest on push to any branch except main
 ├── .github/workflows/cd.yml      CD: on push to main — runs ci.yml, then deploy (stub)
+├── tests/                        pytest suite (in-memory SQLite; see Common Commands)
+├── pytest.ini                    pytest config (adds src/ to sys.path, so tests import `app`)
 └── src/
     ├── .env.example               Template for local secrets/config (copy to .env)
     ├── entrypoint.sh              Container entrypoint: waits for Postgres, runs alembic, starts uvicorn
@@ -108,7 +110,6 @@ together in a FastAPI project.
     │   │   ├── unit_of_work/         Transaction boundary wrapping the repositories
     │   │   └── database/             Async engine/session factory
     │   └── services/                 Business logic (AuthService, UserService, JWTService)
-    └── tests/                       pytest suite (in-memory SQLite; see Common Commands)
 ```
 
 ## Configuration
@@ -138,7 +139,7 @@ kept 10 days, gzip-compressed) under `src/`.
 
 ## Common Commands
 
-Run everything from the `src/` directory unless noted otherwise.
+Run app/alembic/ruff commands from the `src/` directory and pytest from the repo root.
 
 ```bash
 # Install dependencies (creates .venv in the repo root from uv.lock)
@@ -150,11 +151,11 @@ uv run python -m app.run
 # Apply database migrations
 uv run alembic upgrade head
 
-# Run the test suite (in-memory SQLite, no Docker required)
+# Run the test suite from the repo root (in-memory SQLite, no Docker required)
 uv run python -m pytest
 
 # Run tests with a coverage report (terminal + HTML in htmlcov/)
-uv run python -m pytest --cov=app --cov-report=term-missing --cov-report=html
+uv run python -m pytest --cov=src/app --cov-report=term-missing --cov-report=html
 
 # Run one test file or test
 uv run python -m pytest tests/test_auth_endpoints.py -v

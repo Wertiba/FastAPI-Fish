@@ -1,4 +1,4 @@
-# src/tests/test_app_boot.py
+# tests/test_app_boot.py
 from fastapi.testclient import TestClient
 
 from app.main import app

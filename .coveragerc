@@ -1,5 +1,5 @@
 [run]
-source = app
+source = src/app
 branch = true
 
 [report]
