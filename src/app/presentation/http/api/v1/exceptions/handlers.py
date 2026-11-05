@@ -36,7 +36,7 @@ def register_exception_handlers(app: FastAPI) -> None:
     """Unhandled exceptions become a 500 in ``TraceIdMiddleware``, which also keeps the trace id header."""
 
     @app.exception_handler(EntityError)
-    async def handle_domain_exception(request: Request, exc: EntityError) -> JSONResponse:
+    async def handle_domain_exception(request: Request, exc: EntityError) -> JSONResponse:  # noqa: RUF029
         factory = next((fac for exc_cls, fac in DOMAIN_TO_API.items() if isinstance(exc, exc_cls)), None)
         if factory is not None:
             api_exc = factory(request.url.path, exc)
@@ -46,20 +46,20 @@ def register_exception_handlers(app: FastAPI) -> None:
         return _json(api_exc)
 
     @app.exception_handler(APIException)
-    async def handle_api_exception(request: Request, exc: APIException) -> JSONResponse:
+    async def handle_api_exception(request: Request, exc: APIException) -> JSONResponse:  # noqa: RUF029
         return _json(exc)
 
     @app.exception_handler(DuplicateError)
-    async def handle_duplicate(request: Request, exc: DuplicateError) -> JSONResponse:
+    async def handle_duplicate(request: Request, exc: DuplicateError) -> JSONResponse:  # noqa: RUF029
         return _json(Conflict(path=request.url.path))
 
     @app.exception_handler(ApplicationError)
-    async def handle_application_error(request: Request, exc: ApplicationError) -> JSONResponse:
+    async def handle_application_error(request: Request, exc: ApplicationError) -> JSONResponse:  # noqa: RUF029
         logger.error("application_error", extra=request_log_context(request), exc_info=exc)
         return _json(APIException(path=request.url.path))
 
     @app.exception_handler(StarletteHTTPException)
-    async def handle_http_error(request: Request, exc: StarletteHTTPException) -> JSONResponse:
+    async def handle_http_error(request: Request, exc: StarletteHTTPException) -> JSONResponse:  # noqa: RUF029
         api_cls = _HTTP_ERRORS.get(exc.status_code)
         if api_cls is not None:
             api_exc = api_cls(path=request.url.path)
@@ -69,7 +69,7 @@ def register_exception_handlers(app: FastAPI) -> None:
         return _json(api_exc, headers=exc.headers)
 
     @app.exception_handler(RequestValidationError)
-    async def validation_exception_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
+    async def validation_exception_handler(request: Request, exc: RequestValidationError) -> JSONResponse:  # noqa: RUF029
         field_errors = [
             FieldError(
                 field=loc_to_field(tuple(err.get("loc", ()))),

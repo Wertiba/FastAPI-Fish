@@ -32,7 +32,7 @@ def request_log_context(request: Request) -> dict[str, Any]:
     return {
         "http_method": request.method if request.method in _METHODS else "OTHER",
         "route": _route_template(request),
-        **{key: value for key, value in request.path_params.items() if key in {"user_id"}},
+        **{key: value for key, value in request.path_params.items() if key == "user_id"},
     }
 
 
