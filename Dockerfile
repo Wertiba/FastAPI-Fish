@@ -19,18 +19,18 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 # 2. Код и сам проект
 COPY src ./src
 COPY alembic.ini ./
-COPY migrations ./migrations
+COPY alembic ./alembic
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --locked --no-dev --no-editable
 
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh \
-    && useradd --create-home --uid 1000 app \
-    && mkdir -p /app/logs && chown app /app/logs
+    && useradd --create-home --uid 1000 app
 
 ENV PATH="/app/.venv/bin:$PATH"
 USER app
 EXPOSE 8080
 
 ENTRYPOINT ["docker-entrypoint.sh"]
-CMD ["uvicorn", "app.main:create_app", "--factory", "--host", "0.0.0.0", "--port", "8080", "--proxy-headers"]
+# Access lines come from ObservabilityMiddleware (with trace id), so uvicorn's own are off.
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080", "--proxy-headers", "--no-access-log"]

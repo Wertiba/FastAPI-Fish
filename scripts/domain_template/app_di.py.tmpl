@@ -1,0 +1,14 @@
+from dishka import Provider, Scope, provide_all
+
+from app.application.{{plural}}.interactors import (
+    Create{{Entity}},
+    Delete{{Entity}},
+    Get{{Entity}},
+    List{{Plural}},
+    Update{{Entity}},
+)
+
+
+class {{Entity}}Provider(Provider):
+    scope = Scope.REQUEST
+    interactors = provide_all(List{{Plural}}, Get{{Entity}}, Create{{Entity}}, Update{{Entity}}, Delete{{Entity}})

@@ -1,0 +1,27 @@
+from dataclasses import dataclass
+from datetime import datetime
+from typing import Any
+
+from app.domain.{{plural}}.ids import {{Entity}}Id
+from app.domain.users.ids import UserId
+
+
+@dataclass(kw_only=True)
+class {{Entity}}CreateData:
+    title: str
+    description: str | None = None
+
+
+@dataclass(kw_only=True)
+class {{Entity}}UpdateData:
+    changes: dict[str, Any]
+
+
+@dataclass(kw_only=True)
+class {{Entity}}Result:
+    id: {{Entity}}Id
+    ownerId: UserId
+    title: str
+    description: str | None
+    createdAt: datetime
+    updatedAt: datetime

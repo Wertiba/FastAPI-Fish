@@ -1,56 +1,81 @@
-"""Общие фикстуры.
+"""Shared fixtures.
 
-По умолчанию тесты идут на in-memory SQLite — без Docker и без .env.
-``TEST_DB_URL=postgresql+asyncpg://...`` прогоняет тот же набор на PostgreSQL
-(каждый тест получает чистые таблицы).
+Tests run on in-memory SQLite by default: no Docker and no ``.env`` needed.
+``TEST_DB_URL=postgresql+asyncpg://...`` runs the same suite on PostgreSQL (every test gets clean tables).
 """
 
 import os
-from collections.abc import Callable, Iterator
-from typing import Any
-from uuid import uuid4
-
-import pytest
-from fastapi.testclient import TestClient
-from sqlalchemy.ext.asyncio import AsyncEngine
-
-from app.bootstrap.config import Settings
-from app.main import create_app
-from app.shared.infrastructure.database import metadata
 
 ADMIN_EMAIL = "admin@example.com"
 ADMIN_PASSWORD = "admin-password-1"
 USER_PASSWORD = "user-password-1"
 
+for _key, _value in {
+    "DB_HOST": "localhost",
+    "DB_PORT": "5432",
+    "DB_NAME": "app_test",
+    "DB_USER": "postgres",
+    "DB_PASSWORD": "postgres",
+    "APP_SECURITY_JWT_SECRET": "test-secret-not-for-production-0123456789",
+    "APP_SECURITY_ACCESS_TOKEN_EXPIRATION": "15m",
+    "APP_SECURITY_REFRESH_TOKEN_EXPIRATION": "30d",
+    "APP_COOKIE_SECURE": "true",
+    "LOG_CONSOLE_LEVEL": "WARNING",
+}.items():
+    os.environ.setdefault(_key, _value)
+# The admin is part of the fixtures, so values from the developer's shell must not leak in.
+os.environ["ADMIN_EMAIL"] = ADMIN_EMAIL
+os.environ["ADMIN_PASSWORD"] = ADMIN_PASSWORD
+
+from collections.abc import AsyncIterator, Callable, Iterator  # noqa: E402
+from types import SimpleNamespace  # noqa: E402
+from typing import Any  # noqa: E402
+from uuid import uuid4  # noqa: E402
+
+import pytest  # noqa: E402
+from dishka import Provider, Scope, provide  # noqa: E402
+from fastapi import FastAPI  # noqa: E402
+from fastapi.testclient import TestClient  # noqa: E402
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine  # noqa: E402
+from sqlalchemy.pool import StaticPool  # noqa: E402
+
+from app.bootstrap import build_container  # noqa: E402
+from app.infra.database.db_helper import DatabaseHelper  # noqa: E402
+from app.infra.database.mappings import metadata  # noqa: E402
+from app.main import create_app  # noqa: E402
+
+TEST_DB_URL = os.getenv("TEST_DB_URL", "sqlite+aiosqlite:///:memory:")
+
 
 @pytest.fixture
-def settings() -> Settings:
-    return Settings(
-        _env_file=None,
-        APP_SECURITY_JWT_SECRET="test-secret-test-secret-test-secret",
-        DB_URL=os.getenv("TEST_DB_URL", "sqlite+aiosqlite:///:memory:"),
-        DB_CREATE_TABLES=True,
-        APP_ADMIN_EMAIL=ADMIN_EMAIL,
-        APP_ADMIN_PASSWORD=ADMIN_PASSWORD,
-        APP_COOKIE_SECURE=False,
-        LOG_FILE="",
-        LOG_LEVEL="WARNING",
-    )
-
-
-async def _drop_all(engine: AsyncEngine) -> None:
+async def db_session_factory() -> AsyncIterator[async_sessionmaker[AsyncSession]]:
+    if TEST_DB_URL.startswith("sqlite"):
+        engine = create_async_engine(TEST_DB_URL, poolclass=StaticPool, connect_args={"check_same_thread": False})
+    else:
+        engine = create_async_engine(TEST_DB_URL)
+    async with engine.begin() as conn:
+        await conn.run_sync(metadata.create_all)
+    yield async_sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
     async with engine.begin() as conn:
         await conn.run_sync(metadata.drop_all)
+    await engine.dispose()
 
 
 @pytest.fixture
-def client(settings: Settings) -> Iterator[TestClient]:
-    app = create_app(settings)
-    with TestClient(app) as test_client:
+def make_app(db_session_factory: async_sessionmaker[AsyncSession]) -> Callable[[], FastAPI]:
+    class TestDatabaseProvider(Provider):
+        @provide(scope=Scope.APP, override=True)
+        def database(self) -> DatabaseHelper:
+            return SimpleNamespace(session_factory=db_session_factory)  # type: ignore[return-value]
+
+    return lambda: create_app(build_container(TestDatabaseProvider()))
+
+
+@pytest.fixture
+def client(make_app: Callable[[], FastAPI]) -> Iterator[TestClient]:
+    # https: with APP_COOKIE_SECURE=true httpx drops the Secure refresh cookie on plain http.
+    with TestClient(make_app(), base_url="https://testserver") as test_client:
         yield test_client
-        if not settings.database_url.startswith("sqlite"):
-            engine = test_client.portal.call(app.state.dishka_container.get, AsyncEngine)
-            test_client.portal.call(_drop_all, engine)
 
 
 def bearer(token: str) -> dict[str, str]:
@@ -69,7 +94,7 @@ RegisterUser = Callable[..., dict[str, Any]]
 
 @pytest.fixture
 def register_user(client: TestClient) -> RegisterUser:
-    """Регистрирует пользователя; возвращает тело ответа + готовые заголовки ``headers``."""
+    """Registers a user; returns the response body plus ready ``headers`` and the ``refreshToken``."""
 
     def _register(email: str | None = None, full_name: str = "Test User") -> dict[str, Any]:
         body = {

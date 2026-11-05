@@ -1,0 +1,83 @@
+from dataclasses import dataclass
+from typing import Any
+
+from app.application.changes import apply_changes
+from app.application.pagination import Page, Pagination
+from app.application.ports.{{entity}}_gateway import {{Entity}}Gateway
+from app.application.ports.unit_of_work import UnitOfWork
+from app.application.ports.user_gateway import UserGateway
+from app.application.users.access import is_admin
+from app.application.{{plural}}.dto import {{Entity}}CreateData, {{Entity}}Result, {{Entity}}UpdateData
+from app.domain.{{plural}}.entity import {{Entity}}
+from app.domain.{{plural}}.errors import {{Entity}}NotFoundError
+from app.domain.{{plural}}.ids import {{Entity}}Id
+from app.domain.users.errors import ForbiddenError
+from app.domain.users.ids import UserId
+
+
+@dataclass
+class _{{Entity}}Context:
+    uow: UnitOfWork
+    {{entity}}_gateway: {{Entity}}Gateway
+    user_gateway: UserGateway
+
+    @staticmethod
+    def _to_read_response({{entity}}: {{Entity}}) -> {{Entity}}Result:
+        return {{Entity}}Result(
+            id={{entity}}.id,
+            ownerId={{entity}}.owner_id,
+            title={{entity}}.title,
+            description={{entity}}.description,
+            createdAt={{entity}}.created_at,
+            updatedAt={{entity}}.updated_at,
+        )
+
+    async def _require_{{entity}}(self, user_id: UserId, {{entity}}_id: {{Entity}}Id) -> {{Entity}}:
+        """The owner and admins have access; everyone else gets 403."""
+        {{entity}} = await self.{{entity}}_gateway.get_by_id({{entity}}_id)
+        if {{entity}} is None:
+            raise {{Entity}}NotFoundError
+        if {{entity}}.owner_id != user_id and not await is_admin(self.user_gateway, user_id):
+            raise ForbiddenError
+        return {{entity}}
+
+
+class List{{Plural}}(_{{Entity}}Context):
+    async def __call__(self, user_id: UserId, pagination: Pagination) -> Page[{{Entity}}Result]:
+        """A user sees their own items, an admin sees everything."""
+        owner_id = None if await is_admin(self.user_gateway, user_id) else user_id
+        items = await self.{{entity}}_gateway.get_all(offset=pagination.offset, limit=pagination.limit, owner_id=owner_id)
+        total = await self.{{entity}}_gateway.count(owner_id=owner_id)
+        return Page.build(items=[self._to_read_response(item) for item in items], total=total, pagination=pagination)
+
+
+class Get{{Entity}}(_{{Entity}}Context):
+    async def __call__(self, user_id: UserId, {{entity}}_id: {{Entity}}Id) -> {{Entity}}Result:
+        return self._to_read_response(await self._require_{{entity}}(user_id, {{entity}}_id))
+
+
+class Create{{Entity}}(_{{Entity}}Context):
+    async def __call__(self, user_id: UserId, data: {{Entity}}CreateData) -> {{Entity}}Result:
+        {{entity}} = {{Entity}}(owner_id=user_id, title=data.title, description=data.description)
+        await self.uow.add({{entity}})
+        result = self._to_read_response({{entity}})
+        await self.uow.commit()
+        return result
+
+
+class Update{{Entity}}(_{{Entity}}Context):
+    async def __call__(self, user_id: UserId, {{entity}}_id: {{Entity}}Id, data: {{Entity}}UpdateData) -> {{Entity}}Result:
+        {{entity}} = await self._require_{{entity}}(user_id, {{entity}}_id)
+        values: dict[str, Any] = {key: data.changes[key] for key in ("title", "description") if key in data.changes}
+        if values:
+            apply_changes({{entity}}, values)
+        result = self._to_read_response({{entity}})
+        await self.uow.commit()
+        return result
+
+
+class Delete{{Entity}}(_{{Entity}}Context):
+    async def __call__(self, user_id: UserId, {{entity}}_id: {{Entity}}Id) -> None:
+        {{entity}} = await self._require_{{entity}}(user_id, {{entity}}_id)
+        await self.uow.delete({{entity}})
+        await self.uow.commit()

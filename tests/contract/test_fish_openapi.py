@@ -11,24 +11,20 @@ from typing import Any
 
 import pytest
 
-from app.bootstrap.config import Settings
-from app.main import create_app
+from app.main import app
 
 FISH = json.loads((Path(__file__).parent / "fish_openapi.json").read_text(encoding="utf-8"))
 
 
 @pytest.fixture(scope="module")
 def ours() -> dict[str, Any]:
-    settings = Settings(_env_file=None, APP_SECURITY_JWT_SECRET="contract", LOG_FILE="", LOG_LEVEL="WARNING")
-    return create_app(settings).openapi()
+    return app.openapi()
 
 
 FISH_OPERATIONS = [(path, method) for path, item in FISH["paths"].items() for method in item]
 
 
-@pytest.mark.parametrize(
-    ("path", "method"), FISH_OPERATIONS, ids=[f"{m.upper()} {p}" for p, m in FISH_OPERATIONS]
-)
+@pytest.mark.parametrize(("path", "method"), FISH_OPERATIONS, ids=[f"{m.upper()} {p}" for p, m in FISH_OPERATIONS])
 def test_operation_matches_fish(ours: dict[str, Any], path: str, method: str) -> None:
     assert path in ours["paths"], f"нет пути {path}"
     assert ours["paths"][path].get(method) == FISH["paths"][path][method]

@@ -1,0 +1,46 @@
+from typing import Any
+
+from sqlalchemy import Select, func, select
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.application.exceptions import ApplicationError
+from app.application.ports.{{entity}}_gateway import {{Entity}}Gateway
+from app.domain.{{plural}}.entity import {{Entity}}
+from app.domain.{{plural}}.ids import {{Entity}}Id
+from app.domain.users.ids import UserId
+from app.infra.database.mappings import {{plural}}
+
+
+class SqlAlchemy{{Entity}}Gateway({{Entity}}Gateway):
+    def __init__(self, session: AsyncSession) -> None:
+        self.session = session
+
+    async def get_by_id(self, id_: {{Entity}}Id) -> {{Entity}} | None:
+        try:
+            return await self.session.get({{Entity}}, id_)
+        except SQLAlchemyError as exc:
+            raise ApplicationError("Database error") from exc
+
+    async def get_all(self, offset: int, limit: int, *, owner_id: UserId | None = None) -> list[{{Entity}}]:
+        stmt = self._apply_criteria(select({{Entity}}), owner_id=owner_id)
+        stmt = stmt.order_by({{plural}}.c.created_at.desc(), {{plural}}.c.id).offset(offset).limit(limit)
+        try:
+            result = await self.session.execute(stmt)
+            return list(result.scalars().all())
+        except SQLAlchemyError as exc:
+            raise ApplicationError("Database error") from exc
+
+    async def count(self, *, owner_id: UserId | None = None) -> int:
+        stmt = self._apply_criteria(select(func.count()).select_from({{plural}}), owner_id=owner_id)
+        try:
+            result = await self.session.execute(stmt)
+            return int(result.scalar_one())
+        except SQLAlchemyError as exc:
+            raise ApplicationError("Database error") from exc
+
+    @staticmethod
+    def _apply_criteria[S: Select[Any]](stmt: S, *, owner_id: UserId | None) -> S:
+        if owner_id is not None:
+            stmt = stmt.where({{plural}}.c.owner_id == owner_id)
+        return stmt

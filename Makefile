@@ -1,10 +1,10 @@
-.PHONY: install run test test-pg lint fmt typecheck check migrate migration module openapi lock up down
+.PHONY: install run test test-pg lint fmt typecheck check migrate migration domain openapi lock up down
 
 install:            ## окружение .venv со всеми зависимостями (включая dev)
 	uv sync
 
-run:                ## локальный запуск с autoreload (нужен .env и Postgres)
-	uv run python -m app
+run:                ## локальный запуск (нужны .env и Postgres)
+	uv run --env-file .env python -m app.run
 
 test:               ## тесты на in-memory SQLite
 	uv run pytest
@@ -26,15 +26,15 @@ typecheck:
 check: lint typecheck test
 
 migrate:            ## применить миграции
-	uv run alembic upgrade head
+	uv run --env-file .env alembic upgrade head
 
 migration:          ## make migration m="add projects"
-	uv run alembic revision --autogenerate -m "$(m)"
+	uv run --env-file .env alembic revision --autogenerate -m "$(m)"
 
-module:             ## make module name=projects [entity=Project]
-	uv run python scripts/new_module.py $(name) $(entity)
+domain:             ## make domain name=projects [entity=Project]
+	uv run python scripts/new_domain.py $(name) $(entity)
 
-openapi:
+openapi:            ## обновить docs/openapi.json
 	uv run python scripts/export_openapi.py
 
 lock:               ## обновить uv.lock после правки зависимостей

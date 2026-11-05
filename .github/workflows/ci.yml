@@ -31,8 +31,11 @@ jobs:
         options: >-
           --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 3s --health-retries 10
     env:
-      DB_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/app_test
-      APP_SECURITY_JWT_SECRET: ci-secret-ci-secret-ci-secret
+      DB_HOST: localhost
+      DB_PORT: "5432"
+      DB_NAME: app_test
+      DB_USER: postgres
+      DB_PASSWORD: postgres
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
