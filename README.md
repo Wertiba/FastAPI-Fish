@@ -32,19 +32,19 @@
 
 ```bash
 ./scripts/init_project.sh "My Team"   # опционально: переименовать проект
-cp .env.example .env                  # поменяйте секреты
+cp src/.env.example src/.env          # поменяйте секреты
 
 # вариант 1: всё в Docker
 docker compose up --build             # http://localhost:8080/docs
 
 # вариант 2: локально (нужен uv: https://docs.astral.sh/uv/)
 uv sync                               # .venv с Python 3.13 и всеми зависимостями по uv.lock
-make migrate                          # нужен Postgres из .env
+make migrate                          # нужен Postgres из src/.env
 make run                              # http://localhost:8080/docs
 ```
 
-Приложение и Alembic читают **только переменные окружения процесса**. `.env` подхватывают
-`make` (`uv run --env-file .env ...`) и `docker compose` (`env_file`); тестам он не нужен.
+Приложение и Alembic читают **только переменные окружения процесса**. `src/.env` подхватывают
+`make` (`uv run --env-file src/.env ...`) и `docker compose` (`env_file`); тестам он не нужен.
 
 Все команды есть в `Makefile` (`make install`, `make run`, `make test`, `make check`…).
 Зависимости добавляются через `uv add <пакет>` (dev — `uv add --dev <пакет>`), lock обновится сам.

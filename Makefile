@@ -3,8 +3,8 @@
 install:            ## окружение .venv со всеми зависимостями (включая dev)
 	uv sync
 
-run:                ## локальный запуск (нужны .env и Postgres)
-	uv run --env-file .env python -m app.run
+run:                ## локальный запуск (нужны src/.env и Postgres)
+	uv run --env-file src/.env python -m app.run
 
 test:               ## тесты на in-memory SQLite
 	uv run pytest
@@ -26,10 +26,10 @@ typecheck:
 check: lint typecheck test
 
 migrate:            ## применить миграции
-	uv run --env-file .env alembic -c src/alembic.ini upgrade head
+	uv run --env-file src/.env alembic -c src/alembic.ini upgrade head
 
 migration:          ## make migration m="add projects"
-	uv run --env-file .env alembic -c src/alembic.ini revision --autogenerate -m "$(m)"
+	uv run --env-file src/.env alembic -c src/alembic.ini revision --autogenerate -m "$(m)"
 
 domain:             ## make domain name=projects [entity=Project]
 	uv run python scripts/new_domain.py $(name) $(entity)

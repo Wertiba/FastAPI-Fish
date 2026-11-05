@@ -1,7 +1,7 @@
 services:
   app:
     build: .
-    env_file: .env
+    env_file: src/.env
     environment:
       DB_HOST: db
       DB_PORT: 5432
@@ -20,7 +20,7 @@ services:
 
   db:
     image: postgres:17-alpine
-    env_file: .env
+    env_file: src/.env
     volumes:
       - db_data:/var/lib/postgresql/data
     ports:
