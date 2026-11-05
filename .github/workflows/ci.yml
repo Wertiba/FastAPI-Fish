@@ -2,8 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main, master]
-  pull_request:
+    branches-ignore: [main]  # main is covered by cd.yml, which calls this workflow
+  workflow_call:
+  workflow_dispatch:
 
 jobs:
   lint:
@@ -12,6 +13,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
         with:
+          version: "0.9.16"
           enable-cache: true
       - run: uv sync --locked
       - run: uv run ruff check .
@@ -40,16 +42,25 @@ jobs:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
         with:
+          version: "0.9.16"
           enable-cache: true
       - run: uv sync --locked
-      - name: Tests on SQLite (incl. OpenAPI contract with FastAPI-Fish)
-        run: uv run pytest --cov --cov-report=term-missing
+      - name: Unit tests (in-memory SQLite, incl. OpenAPI contract with FastAPI-Fish)
+        run: uv run python -m pytest --cov=app --cov-report= -v
       - name: Migrations apply cleanly and match the models
         run: |
-          uv run alembic upgrade head
-          uv run alembic check
-          uv run alembic downgrade base
-      - name: Tests on PostgreSQL
-        run: uv run pytest
+          uv run alembic -c src/alembic.ini upgrade head
+          uv run alembic -c src/alembic.ini check
+          uv run alembic -c src/alembic.ini downgrade base
+      - name: Integration tests (PostgreSQL)
+        run: uv run python -m pytest --cov=app --cov-append --cov-report=term-missing --cov-report=xml --cov-report=html -v
         env:
           TEST_DB_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/app_test
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: |
+            coverage.xml
+            htmlcov

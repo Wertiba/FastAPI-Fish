@@ -26,10 +26,10 @@ typecheck:
 check: lint typecheck test
 
 migrate:            ## применить миграции
-	uv run --env-file .env alembic upgrade head
+	uv run --env-file .env alembic -c src/alembic.ini upgrade head
 
 migration:          ## make migration m="add projects"
-	uv run --env-file .env alembic revision --autogenerate -m "$(m)"
+	uv run --env-file .env alembic -c src/alembic.ini revision --autogenerate -m "$(m)"
 
 domain:             ## make domain name=projects [entity=Project]
 	uv run python scripts/new_domain.py $(name) $(entity)

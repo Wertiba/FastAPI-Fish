@@ -77,6 +77,8 @@ src/app/
     ├── schemas/         Pydantic-схемы запросов и ответов (имена полей = camelCase API)
     ├── middleware/      trace_id.py (X-Trace-Id + 500), observability.py (метрики + access-лог)
     └── paginated.py, loc2field.py, password.py
+
+src/alembic.ini, src/alembic/   миграции; env.py берёт DatabaseConfig и metadata из infra
 ```
 
 Зависимости направлены внутрь. Правила проверяет `tests/architecture/test_architecture.py`,

@@ -18,8 +18,6 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 
 # 2. Код и сам проект
 COPY src ./src
-COPY alembic.ini ./
-COPY alembic ./alembic
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --locked --no-dev --no-editable
 
