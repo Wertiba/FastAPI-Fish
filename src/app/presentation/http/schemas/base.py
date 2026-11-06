@@ -3,10 +3,6 @@ from typing import Annotated
 
 from pydantic import PlainSerializer
 
-from app.application.schema import PyModel
-
-__all__ = ["PyModel", "UtcDatetime", "format_utc", "timestamp_now"]
-
 
 def format_utc(value: datetime) -> str:
     """``2026-01-02T03:04:05.678Z``"""

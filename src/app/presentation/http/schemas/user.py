@@ -7,8 +7,9 @@ from uuid import UUID
 
 from pydantic import EmailStr
 
+from app.application.schema import PyModel
 from app.domain.users.enums import UserRole
-from app.presentation.http.schemas.base import PyModel, UtcDatetime
+from app.presentation.http.schemas.base import UtcDatetime
 from app.presentation.http.schemas.token import AccessTokenResponse
 
 

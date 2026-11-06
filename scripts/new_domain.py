@@ -6,7 +6,7 @@
 
 Создаёт файлы домена в каждом слое (domain / application / infra / presentation), e2e-тест
 ``tests/api/test_<domain>_endpoints.py`` и регистрирует домен в общих точках сборки: модель в
-``metadata.py`` (для Alembic), gateway-провайдер, провайдер интеракторов, роутер, маппинг ошибок.
+``infra/database/__init__.py`` (для Alembic), gateway-провайдер, провайдер интеракторов, роутер, маппинг ошибок.
 Поля сущности описаны в модели (она же таблица), во входных схемах application и в схеме ответа.
 Дальше — миграция и ваша предметная логика.
 """
@@ -75,7 +75,7 @@ def register(ctx: dict[str, str]) -> list[Path]:
     plural, entity, entity_cls = ctx["plural"], ctx["entity"], ctx["Entity"]
     imp_domain = f"from app.domain.{plural}.entity import {entity_cls}\n"
     paths = {
-        "metadata": APP / "infra" / "database" / "metadata.py",
+        "metadata": APP / "infra" / "database" / "__init__.py",
         "gateways": APP / "infra" / "gateways" / "di.py",
         "bootstrap": APP / "bootstrap.py",
         "routers": APP / "presentation" / "http" / "api" / "v1" / "endpoints" / "__init__.py",

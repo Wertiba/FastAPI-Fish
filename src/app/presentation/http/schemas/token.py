@@ -1,4 +1,4 @@
-from app.presentation.http.schemas.base import PyModel
+from app.application.schema import PyModel
 
 
 class AccessTokenResponse(PyModel):

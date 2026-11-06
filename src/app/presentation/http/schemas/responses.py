@@ -2,7 +2,8 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from app.presentation.http.schemas.base import PyModel, timestamp_now
+from app.application.schema import PyModel
+from app.presentation.http.schemas.base import timestamp_now
 
 
 class _EchoModel(BaseModel):

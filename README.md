@@ -71,7 +71,7 @@ src/app/
 │   ├── pagination.py, changes.py, exceptions.py
 ├── infra/               реализации портов
 │   ├── config.py, di.py конфиги из окружения (RunConfig, DatabaseConfig, SecurityConfig…) и их провайдер
-│   ├── database/        metadata.py (импорт всех моделей для Alembic), unit_of_work.py, db_helper.py, health.py
+│   ├── database/        __init__.py (импорт всех моделей и metadata для Alembic), unit_of_work.py, db_helper.py, health.py
 │   ├── gateways/        SqlAlchemy*Gateway + GatewayProvider
 │   ├── security/        JWTService: JWT, argon2, хеш refresh-токена
 │   ├── logger.py, metrics.py, duration.py
@@ -82,7 +82,7 @@ src/app/
     ├── middleware/      trace_id.py (X-Trace-Id + 500), observability.py (метрики + access-лог)
     └── paginated.py, loc2field.py
 
-src/alembic.ini, src/alembic/   миграции; env.py берёт DatabaseConfig и metadata из infra/database/metadata.py
+src/alembic.ini, src/alembic/   миграции; env.py берёт DatabaseConfig и metadata из infra/database/__init__.py
 ```
 
 Зависимости направлены внутрь. Правила проверяет `tests/architecture/test_architecture.py`,
@@ -112,7 +112,7 @@ uv run pytest tests/api/test_projects_endpoints.py
 Ручной путь (если генератор не подходит):
 1. `domain/<x>/`: `entity.py` (модель `class X(Base, kw_only=True)`), `errors.py` (наследники `EntityError`).
 2. `application/ports/<x>_gateway.py` и `application/<x>/`: `schemas.py`, `interactors.py`, `di.py`.
-3. Импорт модели в `infra/database/metadata.py`, чтобы Alembic увидел таблицу.
+3. Импорт модели и её имя в `__all__` в `infra/database/__init__.py`, чтобы Alembic увидел таблицу.
 4. `infra/gateways/<x>.py` + строка в `infra/gateways/di.py`.
 5. `presentation/http/schemas/<x>.py`, `presentation/http/api/v1/endpoints/<x>.py` + `include_router`
    в `endpoints/__init__.py`; ошибки → `exceptions/exc_map.py`.
