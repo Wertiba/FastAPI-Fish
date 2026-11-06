@@ -5,13 +5,15 @@ from uuid import UUID, uuid4
 
 import pytest
 
-from app.application.ports.user_gateway import UserCriteria
-from app.application.users.dto import UserUpdateData
-from app.application.users.interactors import DeactivateUser, UpdateUser
-from app.domain.refresh_tokens.entity import RefreshToken
-from app.domain.users.entity import User
-from app.domain.users.enums import UserRole
-from app.domain.users.errors import ForbiddenError, UserNotFoundError
+from app.modules.users.api.contracts import UserDeactivated
+from app.modules.users.application.dto import UserUpdateData
+from app.modules.users.application.interactors import DeactivateUser, UpdateUser
+from app.modules.users.application.ports import UserCriteria
+from app.modules.users.domain.entity import User
+from app.modules.users.domain.enums import UserRole
+from app.modules.users.domain.errors import UserNotFoundError
+from app.shared.application.events import Event
+from app.shared.domain.errors import ForbiddenError
 
 
 def make_user(role: UserRole = UserRole.USER) -> User:
@@ -35,18 +37,16 @@ class InMemoryUsers:
         return len(self.items)
 
 
-class InMemoryRefreshTokens:
+class RecordingEvents:
     def __init__(self) -> None:
-        self.revoked: list[UUID] = []
+        self.published: list[Event] = []
 
-    async def get_by_user_and_hash(self, user_id: UUID, token_hash: str) -> RefreshToken | None:
-        return None
+    async def publish(self, event: Event) -> None:
+        self.published.append(event)
 
-    async def get_by_hash(self, token_hash: str) -> RefreshToken | None:
-        return None
-
-    async def delete_by_user(self, user_id: UUID) -> None:
-        self.revoked.append(user_id)
+    @property
+    def deactivated(self) -> list[UUID]:
+        return [event.user_id for event in self.published if isinstance(event, UserDeactivated)]
 
 
 class FakeUnitOfWork:
@@ -67,10 +67,10 @@ class Context:
     def __init__(self, *users: User) -> None:
         self.uow = FakeUnitOfWork()
         self.users = InMemoryUsers(*users)
-        self.tokens = InMemoryRefreshTokens()
+        self.events = RecordingEvents()
 
     def build[T](self, interactor: type[T]) -> T:
-        return interactor(self.uow, self.users, self.tokens, None)  # type: ignore[call-arg]
+        return interactor(self.uow, self.users, None, self.events)  # type: ignore[call-arg]
 
 
 class TestUpdateUser:
@@ -82,7 +82,7 @@ class TestUpdateUser:
 
         assert result.fullName == user.full_name == "New"
         assert ctx.uow.committed
-        assert ctx.tokens.revoked == []
+        assert ctx.events.deactivated == []
 
     @pytest.mark.parametrize(
         "data",
@@ -111,25 +111,25 @@ class TestUpdateUser:
         with pytest.raises(ForbiddenError):
             await Context(alice, bob).build(UpdateUser)(alice.id, bob.id, UserUpdateData(fullName="X"))
 
-    async def test_admin_deactivation_revokes_sessions(self) -> None:
+    async def test_admin_deactivation_publishes_event(self) -> None:
         admin, user = make_user(UserRole.ADMIN), make_user()
         ctx = Context(admin, user)
 
         await ctx.build(UpdateUser)(admin.id, user.id, UserUpdateData(fullName="X", isActive=False))
 
         assert user.is_active is False
-        assert ctx.tokens.revoked == [user.id]
+        assert ctx.events.deactivated == [user.id]
 
 
 class TestDeactivateUser:
-    async def test_deactivates_and_revokes_sessions(self) -> None:
+    async def test_deactivates_and_publishes_event(self) -> None:
         admin, user = make_user(UserRole.ADMIN), make_user()
         ctx = Context(admin, user)
 
         await ctx.build(DeactivateUser)(admin.id, user.id)
 
         assert user.is_active is False
-        assert ctx.tokens.revoked == [user.id]
+        assert ctx.events.deactivated == [user.id]
         assert ctx.uow.committed
 
     async def test_requires_admin(self) -> None:

@@ -1,0 +1,31 @@
+"""Composition of the ``{{plural}}`` module: the only file that wires its layers together."""
+
+from dishka import Provider, Scope, provide, provide_all
+
+from app.modules.{{plural}}.application.interactors import (
+    Create{{Entity}},
+    Delete{{Entity}},
+    Get{{Entity}},
+    List{{Plural}},
+    Update{{Entity}},
+)
+from app.modules.{{plural}}.application.ports import {{Entity}}Gateway
+from app.modules.{{plural}}.infra.gateway import SqlAlchemy{{Entity}}Gateway
+from app.modules.{{plural}}.presentation.http.errors import {{PLURAL}}_ERRORS
+from app.modules.{{plural}}.presentation.http.router import router
+from app.shared.module import Module
+
+
+class {{Plural}}Provider(Provider):
+    scope = Scope.REQUEST
+
+    gateway = provide(SqlAlchemy{{Entity}}Gateway, provides={{Entity}}Gateway)
+    interactors = provide_all(List{{Plural}}, Get{{Entity}}, Create{{Entity}}, Update{{Entity}}, Delete{{Entity}})
+
+
+{{plural}}_module = Module(
+    name="{{plural}}",
+    provider={{Plural}}Provider,
+    router=router,
+    errors={{PLURAL}}_ERRORS,
+)

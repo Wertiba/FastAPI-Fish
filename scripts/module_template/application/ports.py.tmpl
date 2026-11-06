@@ -1,0 +1,15 @@
+from typing import Protocol
+
+from app.modules.{{plural}}.domain.entity import {{Entity}}
+from app.modules.{{plural}}.domain.ids import {{Entity}}Id
+from app.shared.domain.ids import UserId
+
+
+class {{Entity}}Gateway(Protocol):
+    async def get_by_id(self, id_: {{Entity}}Id) -> {{Entity}} | None: ...
+
+    async def get_all(self, offset: int, limit: int, *, owner_id: UserId | None = None) -> list[{{Entity}}]:
+        """Newest first; ``owner_id=None`` means every owner."""
+        ...
+
+    async def count(self, *, owner_id: UserId | None = None) -> int: ...

@@ -8,10 +8,11 @@ from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import create_async_engine
 
-from app.infra.config import DatabaseConfig, build_database_url
-from app.infra.database.mappings import metadata
-from app.infra.database.types import UtcDateTime
-from app.infra.di import ConfigProvider
+from app import bootstrap  # noqa: F401 -- imports every module, which registers its tables
+from app.shared.infra.config import DatabaseConfig, build_database_url
+from app.shared.infra.database.registry import metadata
+from app.shared.infra.database.types import UtcDateTime
+from app.shared.infra.di import ConfigProvider
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

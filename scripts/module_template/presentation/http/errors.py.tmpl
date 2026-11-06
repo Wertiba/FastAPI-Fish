@@ -1,0 +1,7 @@
+from app.modules.{{plural}}.domain.errors import {{Entity}}NotFoundError
+from app.shared.presentation.http.errors import NotFound
+from app.shared.presentation.http.errors.mapping import ErrorMap
+
+{{PLURAL}}_ERRORS: ErrorMap = {
+    {{Entity}}NotFoundError: lambda path, exc: NotFound(path=path, message="{{Title}} not found"),
+}

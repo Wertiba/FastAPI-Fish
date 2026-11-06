@@ -1,4 +1,4 @@
-.PHONY: install run test test-pg lint fmt typecheck check migrate migration domain openapi lock up down
+.PHONY: install run test test-pg lint fmt typecheck check migrate migration module domain openapi lock up down
 
 install:            ## окружение .venv со всеми зависимостями (включая dev)
 	uv sync
@@ -31,8 +31,10 @@ migrate:            ## применить миграции
 migration:          ## make migration m="add projects"
 	uv run --env-file src/.env alembic -c src/alembic.ini revision --autogenerate -m "$(m)"
 
-domain:             ## make domain name=projects [entity=Project]
-	uv run python scripts/new_domain.py $(name) $(entity)
+module:             ## make module name=projects [entity=Project]
+	uv run python scripts/new_module.py $(name) $(entity)
+
+domain: module      ## старое имя make module
 
 openapi:            ## обновить docs/openapi.json
 	uv run python scripts/export_openapi.py

@@ -1,12 +1,13 @@
 # FastAPI-Fish
 
-Шаблон бэкенда на FastAPI в стиле **чистой архитектуры** со слоями
-`domain → application → infra / presentation`: Dishka DI, JWT-аутентификация, CRUD пользователей.
+Шаблон бэкенда на FastAPI — **модульный монолит**: приложение делится на модули по предметным
+областям (`auth`, `users`, …), а внутри каждого модуля — слои чистой архитектуры
+`domain → application → infra / presentation`. Dishka DI, JWT-аутентификация, CRUD пользователей.
 Структура повторяет бэкенд [PetCare](https://github.com/Wertiba/PetCare-PROD-Hackathon-2026),
 а API — [FastAPI-Fish](https://github.com/Wertiba/FastAPI-Fish) (контракт закреплён тестом).
 
-Цель — форкнуть и сразу пилить домены: `make domain name=projects` за секунду раскладывает
-по всем слоям рабочий CRUD с правами доступа, тестами и регистрацией в приложении.
+Цель — форкнуть и сразу пилить модули: `make module name=projects` за секунду создаёт модуль
+с рабочим CRUD, правами доступа, тестами и регистрацией в приложении.
 
 ## Что внутри
 
@@ -19,13 +20,13 @@
   а также `details` или `fieldErrors`. Это касается и 404/405, и необработанных 500.
 - **Trace-id**: заголовок `X-Trace-Id` (принимается или генерируется), попадает в каждую строку лога.
 - **Логи**: одна JSON-строка на событие в stdout, только известные события без пользовательских
-  данных (`infra/logger.py`).
+  данных (`shared/infra/logger.py`).
 - **Ops**: `/health/liveness`, `/health/readiness` (проверяет БД), `/metrics` (Prometheus:
   запросы по шаблонам маршрутов, задержки, бизнес-события через `track()`).
 - **Swagger 1-в-1 с Fish**: те же пути, параметры, тела, коды ответов, `operationId` и имена
   схем (`UserReadResponse`, `Page_UserReadResponse_`…). Фронт, сгенерированный по Fish,
   работает без изменений.
-- **Качество**: uv + `uv.lock`, ruff, mypy `--strict`, архитектурный тест слоёв,
+- **Качество**: uv + `uv.lock`, ruff, mypy `--strict`, архитектурные тесты модулей и слоёв,
   тесты на SQLite и PostgreSQL, проверка миграций в CI.
 
 ## Быстрый старт
@@ -53,72 +54,96 @@ make run                              # http://localhost:8080/docs
 
 ```
 src/app/
-├── main.py              create_app(): middleware, роутеры, обработчики ошибок, lifespan; app = create_app()
-├── bootstrap.py         build_container(): все Dishka-провайдеры — единственное место сборки
+├── main.py              create_app(): middleware, роутеры модулей, обработчики ошибок, lifespan
+├── bootstrap.py         MODULES — список модулей; build_container() — единственное место сборки
 ├── run.py               python -m app.run (локальный запуск)
-├── domain/              сущности (dataclass'ы) и доменные ошибки, только stdlib
-│   ├── errors.py        EntityError — база доменных ошибок
-│   ├── users/           entity.py, enums.py, errors.py, ids.py
-│   └── refresh_tokens/
-├── application/         сценарии; без FastAPI, SQLAlchemy и infra
-│   ├── ports/           Protocol'ы: *_gateway.py, unit_of_work.py, tokens.py, database_health.py
-│   ├── auth/            interactors.py, dto.py, di.py
-│   ├── users/           interactors.py, dto.py, access.py (require_admin…), di.py
-│   ├── pagination.py, changes.py, exceptions.py
-├── infra/               реализации портов
-│   ├── config.py, di.py конфиги из окружения (RunConfig, DatabaseConfig, SecurityConfig…) и их провайдер
-│   ├── database/        mappings.py (таблицы + imperative mapping), unit_of_work.py, db_helper.py, health.py
-│   ├── gateways/        SqlAlchemy*Gateway + GatewayProvider
-│   ├── security/        JWTService: JWT, argon2, хеш refresh-токена
-│   ├── logger.py, metrics.py, duration.py
-└── presentation/http/
-    ├── api/endpoints/   health, metrics (вне /api)
-    ├── api/v1/          endpoints/, dependencies/ (CurrentUserDep, PaginationDep), exceptions/, utils/cookies.py
-    ├── schemas/         Pydantic-схемы запросов и ответов (имена полей = camelCase API)
-    ├── middleware/      trace_id.py (X-Trace-Id + 500), observability.py (метрики + access-лог)
-    └── paginated.py, loc2field.py, password.py
+├── shared/              общее ядро: ничего не знает о модулях
+│   ├── module.py        Module — что модуль отдаёт в сборку (провайдер, роутер, ошибки, подписки, startup)
+│   ├── domain/          EntityError, ForbiddenError, InvalidCredentialsError; ids.py (UserId)
+│   ├── application/     UnitOfWork, IdentityProvider (порт «кто текущий пользователь»),
+│   │                    events.py (Event, EventPublisher), pagination.py, changes.py, exceptions.py
+│   ├── infra/           config.py + di.py, database/ (registry.py — общая metadata, UoW, сессия),
+│   │                    events.py (шина событий в процессе), logger.py, metrics.py
+│   └── presentation/http/  middleware/, errors/ (формат ошибок, mapping.py), schemas/,
+│                        dependencies.py (CurrentUserDep, PaginationDep), ops/ (health, metrics)
+└── modules/
+    ├── users/
+    │   ├── api/         ПУБЛИЧНЫЙ контракт: contracts.py (UsersFacade, UserInfo, UserDeactivated…),
+    │   │                http.py (UserReadResponse, правила полей); всё остальное в модуле приватно
+    │   ├── domain/      entity.py, enums.py, errors.py
+    │   ├── application/ interactors.py, facade.py (реализация UsersFacade), ports.py, dto.py, access.py
+    │   ├── infra/       tables.py (таблица + mapping), gateway.py, password_hasher.py (argon2)
+    │   ├── presentation/http/  router.py, schemas.py, errors.py (маппинг ошибок модуля)
+    │   └── module.py    Dishka-провайдер модуля и users_module = Module(...)
+    └── auth/            та же раскладка; зависит от users только через users.api,
+                         реализует IdentityProvider и подписан на UserDeactivated
 
-src/alembic.ini, src/alembic/   миграции; env.py берёт DatabaseConfig и metadata из infra
+src/alembic.ini, src/alembic/   миграции; env.py импортирует bootstrap (все модули) и общую metadata
 ```
 
-Зависимости направлены внутрь. Правила проверяет `tests/architecture/test_architecture.py`,
-так что CI упадёт, если их нарушить:
+### Правила
+
+Их проверяет `tests/architecture/test_architecture.py`, так что CI упадёт, если их нарушить:
+
+- **Модули общаются только через `api/`** другого модуля. Из `domain`/`application` — только
+  через `api/contracts.py` (без фреймворков), из `presentation` — ещё и через `api/http.py`.
+- **Без циклов** между модулями: `auth → users` можно, обратно — уже нельзя.
+- **`shared` не импортирует модули.** Если ядру что-то нужно от модуля, ядро объявляет порт
+  (как `IdentityProvider`), а модуль его реализует.
+- **`module.py`** импортирует только composition root (`bootstrap.py`, `main.py`, `run.py`).
+- **Слои внутри модуля и `shared`**:
 
 | Слой | Можно импортировать |
 |---|---|
-| `domain` | stdlib и сам `domain` |
-| `application` | `domain`, `application`; `dishka` — только в `application/*/di.py` |
-| `infra` | `domain`, `application`, `infra` (не `presentation`) |
-| `presentation` | всё, кроме composition root (`bootstrap.py`, `main.py`, `run.py`) |
+| `domain` | stdlib, `domain` (свой и `shared`), `api/contracts` других модулей |
+| `application` | то же + `application`; без фреймворков и `dishka` (DI — в `module.py`) |
+| `infra` | всё, кроме `presentation` |
+| `presentation` | всё, кроме composition root |
 
-## Добавить домен
+### Как модули взаимодействуют
+
+| Нужно | Как | Пример |
+|---|---|---|
+| Спросить или попросить другой модуль | вызвать его фасад из `api/contracts.py` | `auth` → `UsersFacade.check_credentials()` |
+| Сообщить, что что-то произошло | опубликовать событие; подписчики — в `Module.subscriptions` | `users` → `UserDeactivated` → `auth` удаляет сессии |
+| Дать ядру возможность, которую реализует модуль | порт в `shared`, реализация в модуле | `IdentityProvider` ← `auth.TokenIdentityProvider` |
+
+События идут через шину в памяти процесса: подписчики выполняются в том же запросе и той же
+транзакции (`UnitOfWork` один на запрос), поэтому эффект атомарен. Чтобы вынести модуль в
+отдельный сервис, шину заменяют на outbox + брокер, а публикаторы и обработчики остаются прежними.
+
+Все модули пишут в одну БД. Таблицы у каждого модуля свои, чужие таблицы модуль не читает
+(только через фасад). Внешний ключ `refresh_tokens.user_id → users.id` оставлен ради
+целостности: это ссылка на уровне БД, а не Python-импорт между модулями.
+
+## Добавить модуль
 
 ```bash
-make domain name=projects                 # или: uv run python scripts/new_domain.py projects Project
+make module name=projects                 # или: uv run python scripts/new_module.py projects Project
 make migration m="add projects"
 make migrate
 uv run pytest tests/api/test_projects_endpoints.py
 ```
 
-Генератор раскладывает по слоям сущность `Project` (`title`, `description`, `owner_id`) и CRUD
-`/api/v1/projects` (`GET`, `POST`, `GET/PATCH/DELETE /{id}`). Пользователь видит свои записи,
-админ — все. Генерируются тест и регистрация в общих точках сборки, а `docs/openapi.json`
-обновляется. Дальше вы переделываете сущность под свою предметную область.
+Генератор создаёт `src/app/modules/projects/` со всеми слоями, `api/contracts.py` и `module.py`:
+сущность `Project` (`title`, `description`, `owner_id`) и CRUD `/api/v1/projects`
+(`GET`, `POST`, `GET/PATCH/DELETE /{id}`). Пользователь видит свои записи, админ — все
+(проверка через `UsersFacade.is_admin`). Генерируется тест, модуль добавляется одной строкой в
+`MODULES` (`bootstrap.py`), `docs/openapi.json` обновляется. Дальше вы переделываете сущность под
+свою предметную область.
 
-Ручной путь (если генератор не подходит):
-1. `domain/<x>/`: `entity.py` (dataclass), `errors.py` (наследники `EntityError`), `ids.py`.
-2. `application/ports/<x>_gateway.py` и `application/<x>/`: `dto.py`, `interactors.py`, `di.py`.
-3. `infra/database/mappings.py`: таблица + `map_imperatively`; добавьте сущность в `Entity`
-   (`application/ports/unit_of_work.py`).
-4. `infra/gateways/<x>.py` + строка в `infra/gateways/di.py`.
-5. `presentation/http/schemas/<x>.py`, `presentation/http/api/v1/endpoints/<x>.py` + `include_router`
-   в `endpoints/__init__.py`; ошибки → `exceptions/exc_map.py`.
-6. Провайдер интеракторов в `bootstrap.py`.
+Ручной путь (если генератор не подходит) — повторите раскладку `modules/users/`:
+1. `domain/`: сущность (dataclass) и ошибки (наследники `EntityError`).
+2. `application/`: `ports.py`, `dto.py`, `interactors.py`.
+3. `infra/`: `tables.py` (таблица на общей `metadata` + `map_once`), `gateway.py`.
+4. `presentation/http/`: `schemas.py`, `router.py`, `errors.py` (`ErrorMap` модуля).
+5. `api/contracts.py`: то, что можно другим модулям (фасад, DTO, события).
+6. `module.py`: Dishka-провайдер и `Module(...)`; добавьте модуль в `MODULES` в `bootstrap.py`.
 
 ## Как писать код
 
 **Интерактор** — класс с `__call__`; общие зависимости собраны в dataclass-контексте, и Dishka
-передаёт их в конструктор. Эндпоинт получает интерактор через `FromDishka[...]`, а текущего
+передаёт их в конструктор (регистрация — в `module.py` модуля). Эндпоинт получает интерактор через `FromDishka[...]`, а текущего
 пользователя — через `CurrentUserDep`, и передаёт `user.id` в интерактор. Команда в конце вызывает
 `await self.uow.commit()`; запрос ничего не коммитит.
 
@@ -130,29 +155,31 @@ class _UserContext:
     ...
 
 class CreateUser(_UserContext):
-    async def __call__(self, user_id: UserId, data: UserCreateData) -> UserResult:
+    async def __call__(self, user_id: UserId, data: UserCreateData) -> UserInfo:
         await require_admin(self.user_gateway, user_id)   # роль читается из БД -> 403
         user = User(email=data.email, ...)
         await self.uow.add(user)
-        result = to_user_result(user)
+        result = to_user_info(user)
         await self.uow.commit()                            # DuplicateError -> 409
         return result
 ```
 
-**Транзакция** одна на HTTP-запрос: все gateways и `UnitOfWork` работают в одной сессии.
-Без `commit()` изменения откатятся.
+**Транзакция** одна на HTTP-запрос: gateways и `UnitOfWork` всех модулей работают в одной
+сессии. Без `commit()` изменения откатятся. Фасады других модулей не коммитят: коммитит интерактор,
+который начал сценарий (так `auth` регистрирует пользователя и создаёт сессию одним коммитом).
 
-**Ошибки**: интерактор бросает доменную ошибку (`raise ProjectNotFoundError`), а
-`presentation/http/api/v1/exceptions/exc_map.py` превращает её в API-ошибку (`NotFound`, `Forbidden`…
-из `api_exs.py`) с нужным статусом и `code`. `DuplicateError` из `UnitOfWork.commit()` → 409,
+**Ошибки**: интерактор бросает доменную ошибку (`raise ProjectNotFoundError`), а `ErrorMap`
+модуля (`presentation/http/errors.py`) превращает её в API-ошибку (`NotFound`… из
+`shared/presentation/http/errors/`) с нужным статусом и `code`. Общие ошибки (`ForbiddenError` → 403,
+`InvalidCredentialsError` → 401) маппятся в `shared`. `DuplicateError` из `UnitOfWork.commit()` → 409,
 прочие `ApplicationError` → 500 с записью в лог, ошибка без маппинга → 500 и `unmapped_domain_error`.
 
-**Таблицы** описываются через `Table` в `infra/database/mappings.py` и привязываются к
-dataclass-сущностям через imperative mapping. В домене нет SQLAlchemy, а ORM всё равно отслеживает
+**Таблицы** описываются через `Table` в `infra/tables.py` модуля (на общей `metadata` из
+`shared/infra/database/registry.py`) и привязываются к dataclass-сущностям через imperative mapping. В домене нет SQLAlchemy, а ORM всё равно отслеживает
 изменения: изменили поле сущности, вызвали `commit()`, и изменение сохранилось.
 
 **Логи**: `logger.info("event_name", extra={...})`, где событие и его поля заранее перечислены в
-`infra/logger.py`. Свободный текст и данные запросов в лог не попадают.
+`shared/infra/logger.py`. Свободный текст и данные запросов в лог не попадают.
 
 ## API
 
@@ -171,7 +198,7 @@ dataclass-сущностям через imperative mapping. В домене не
 
 Swagger UI — `/docs`. Эталон схемы Fish лежит в `tests/contract/fish_openapi.json`, а
 `tests/contract/test_fish_openapi.py` падает при любом расхождении в путях и схемах Fish.
-Новые домены добавляют свои пути, это не нарушение. Выгрузка схемы для фронта:
+Новые модули добавляют свои пути, это не нарушение. Выгрузка схемы для фронта:
 `make openapi` → `docs/openapi.json` (тест сверяет её с приложением).
 
 ## Конфигурация
@@ -190,9 +217,9 @@ Swagger UI — `/docs`. Эталон схемы Fish лежит в `tests/contra
 | `RUN_HOST`, `RUN_PORT` | `0.0.0.0`, `8080` | `make run` |
 | `LOG_CONSOLE_LEVEL`, `LOG_ENV`, `LOG_SYSTEM`, `LOG_INST` | `INFO`, `dev`, `app`, hostname | поля JSON-логов |
 
-Каждая группа — свой Pydantic-конфиг в `infra/config.py`, который `ConfigProvider` (`infra/di.py`)
-собирает из окружения. Новому домену нужен конфиг? Добавьте класс в `config.py` и `@provide` в
-`ConfigProvider`.
+Каждая группа — свой Pydantic-конфиг в `shared/infra/config.py`, который `ConfigProvider`
+(`shared/infra/di.py`) собирает из окружения. Новому модулю нужен конфиг? Добавьте класс в
+`config.py` и `@provide` в `ConfigProvider`.
 
 ## Тесты
 
@@ -204,8 +231,8 @@ make check                                                         # ruff + mypy
 
 - `tests/api/` — HTTP-сценарии через `TestClient` (фикстуры `client`, `admin_headers`, `register_user`);
   БД подменяется через Dishka-провайдер с `override=True`;
-- `tests/unit/` — интеракторы на фейках портов, без БД;
-- `tests/architecture/` — правила импортов между слоями и актуальность `docs/openapi.json`;
+- `tests/unit/` — интеракторы на фейках портов и шины событий, без БД;
+- `tests/architecture/` — границы модулей, отсутствие циклов, слои и актуальность `docs/openapi.json`;
 - `tests/contract/` — OpenAPI совпадает с FastAPI-Fish.
 
 Для `TEST_DB_URL` используйте отдельную базу: тесты удаляют таблицы после каждого прогона.

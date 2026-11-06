@@ -1,7 +1,7 @@
 import uvicorn
 
-from app.infra.config import RunConfig
 from app.main import app
+from app.shared.infra.config import RunConfig
 
 if __name__ == "__main__":
     # Access lines come from ObservabilityMiddleware (with trace id), so uvicorn's own are off.

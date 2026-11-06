@@ -4,37 +4,27 @@ from contextlib import asynccontextmanager
 
 from dishka import AsyncContainer
 from dishka.integrations.fastapi import setup_dishka
-from fastapi import FastAPI
+from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.application.users.interactors import EnsureAdmin
-from app.bootstrap import build_container
-from app.infra.config import AdminConfig, HttpConfig
-from app.infra.database.mappings import start_mappers
-from app.infra.logger import Logger
-from app.presentation.http.api import ops_router, v1_router
-from app.presentation.http.api.v1.exceptions.handlers import register_exception_handlers
-from app.presentation.http.middleware.observability import ObservabilityMiddleware
-from app.presentation.http.middleware.trace_id import TraceIdMiddleware
+from app.bootstrap import MODULES, build_container, error_map
+from app.shared.infra.config import HttpConfig
+from app.shared.infra.logger import Logger
+from app.shared.presentation.http.errors.handlers import register_exception_handlers
+from app.shared.presentation.http.middleware.observability import ObservabilityMiddleware
+from app.shared.presentation.http.middleware.trace_id import TraceIdMiddleware
+from app.shared.presentation.http.ops import router as ops_router
 
 logger = logging.getLogger(__name__)
-
-
-async def _ensure_admin(container: AsyncContainer) -> None:
-    config = await container.get(AdminConfig)
-    if not (config.email and config.password):
-        return
-    async with container() as request_container:
-        ensure_admin = await request_container.get(EnsureAdmin)
-        await ensure_admin(email=config.email, password=config.password, full_name=config.full_name)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     container: AsyncContainer = app.state.dishka_container
     try:
-        start_mappers()
-        await _ensure_admin(container)
+        for module in MODULES:
+            if module.on_startup is not None:
+                await module.on_startup(container)
         logger.info("application_started")
         yield
     finally:
@@ -50,7 +40,7 @@ def create_app(container: AsyncContainer | None = None) -> FastAPI:
 
     app = FastAPI(lifespan=lifespan)
     setup_dishka(container, app)
-    register_exception_handlers(app)
+    register_exception_handlers(app, error_map())
 
     origins = [origin.strip() for origin in http_config.cors_allowed_origins.split(",") if origin.strip()]
     app.add_middleware(
@@ -65,8 +55,11 @@ def create_app(container: AsyncContainer | None = None) -> FastAPI:
     app.add_middleware(ObservabilityMiddleware)
     app.add_middleware(TraceIdMiddleware)
 
+    v1_router = APIRouter(prefix="/api/v1")
+    for module in MODULES:
+        v1_router.include_router(module.router)
     app.include_router(ops_router)
-    app.include_router(v1_router, prefix="/api")
+    app.include_router(v1_router)
     return app
 
 

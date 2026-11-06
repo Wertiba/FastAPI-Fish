@@ -1,0 +1,23 @@
+from sqlalchemy import Column, ForeignKey, String, Table, Uuid
+
+from app.modules.{{plural}}.domain.entity import {{Entity}}
+from app.shared.infra.database.registry import map_once, metadata
+from app.shared.infra.database.types import UtcDateTime
+
+{{plural}} = Table(
+    "{{plural}}",
+    metadata,
+    Column("id", Uuid, primary_key=True),
+    Column("owner_id", Uuid, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True),
+    Column("title", String(200), nullable=False),
+    Column("description", String(2000), nullable=True),
+    Column("created_at", UtcDateTime, nullable=False),
+    Column("updated_at", UtcDateTime, nullable=False),
+)
+
+
+def start_mappers() -> None:
+    map_once({{Entity}}, {{plural}})
+
+
+start_mappers()
