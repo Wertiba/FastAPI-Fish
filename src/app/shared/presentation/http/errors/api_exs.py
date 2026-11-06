@@ -44,3 +44,15 @@ class ValidationFailed(APIException):
     status_code = status.HTTP_422_UNPROCESSABLE_CONTENT
     code = "VALIDATION_FAILED"
     message = "Some fields are not correct."
+
+
+class UpgradeRequired(APIException):
+    status_code = status.HTTP_426_UPGRADE_REQUIRED
+    code = "APP_UPDATE_REQUIRED"
+    message = "This app version is no longer supported; please update"
+
+
+class ServiceUnavailable(APIException):
+    status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+    code = "SERVICE_UNAVAILABLE"
+    message = "A dependent service is unavailable; try again later"

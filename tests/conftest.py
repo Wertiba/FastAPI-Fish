@@ -33,16 +33,17 @@ from typing import Any  # noqa: E402
 from uuid import uuid4  # noqa: E402
 
 import pytest  # noqa: E402
-from dishka import Provider, Scope, provide  # noqa: E402
+from dishka import AsyncContainer, Provider, Scope, provide  # noqa: E402
 from fastapi import FastAPI  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine  # noqa: E402
 from sqlalchemy.pool import StaticPool  # noqa: E402
 
 from app.bootstrap import build_container  # noqa: E402
+from app.shared.domain.time import TimeService  # noqa: E402
 from app.shared.infra.database.db_helper import DatabaseHelper  # noqa: E402
 from app.shared.infra.database.registry import metadata  # noqa: E402
-from app.main import create_app  # noqa: E402
+from app.entrypoints.api import create_app  # noqa: E402
 
 TEST_DB_URL = os.getenv("TEST_DB_URL", "sqlite+aiosqlite:///:memory:")
 
@@ -62,17 +63,51 @@ async def db_session_factory() -> AsyncIterator[async_sessionmaker[AsyncSession]
 
 
 @pytest.fixture
-def make_app(db_session_factory: async_sessionmaker[AsyncSession]) -> Callable[[], FastAPI]:
+def database_provider(db_session_factory: async_sessionmaker[AsyncSession]) -> Provider:
     class TestDatabaseProvider(Provider):
         @provide(scope=Scope.APP, override=True)
         def database(self) -> DatabaseHelper:
             return SimpleNamespace(session_factory=db_session_factory)  # type: ignore[return-value]
 
-    return lambda: create_app(build_container(TestDatabaseProvider()))
+    return TestDatabaseProvider()
+
+
+MakeContainer = Callable[..., AsyncContainer]
 
 
 @pytest.fixture
-def client(make_app: Callable[[], FastAPI]) -> Iterator[TestClient]:
+async def make_container(database_provider: Provider) -> AsyncIterator[MakeContainer]:
+    """The app's container on the test database, for background processes; extra providers go last."""
+    containers: list[AsyncContainer] = []
+
+    def _make(*providers: Provider) -> AsyncContainer:
+        containers.append(build_container(database_provider, *providers))
+        return containers[-1]
+
+    yield _make
+    for container in containers:
+        await container.close()
+
+
+def time_provider(time: TimeService) -> Provider:
+    """Replaces the app's clock: ``make_app(time_provider(frozen))``, then ``frozen.advance(...)``."""
+
+    class TestTimeProvider(Provider):
+        @provide(scope=Scope.APP, override=True)
+        def time(self) -> TimeService:
+            return time
+
+    return TestTimeProvider()
+
+
+@pytest.fixture
+def make_app(database_provider: Provider) -> Callable[..., FastAPI]:
+    """The API on the test database; extra providers (overrides) go last."""
+    return lambda *providers: create_app(build_container(database_provider, *providers))
+
+
+@pytest.fixture
+def client(make_app: Callable[..., FastAPI]) -> Iterator[TestClient]:
     # https: with APP_COOKIE_SECURE=true httpx drops the Secure refresh cookie on plain http.
     with TestClient(make_app(), base_url="https://testserver") as test_client:
         yield test_client

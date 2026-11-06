@@ -12,7 +12,7 @@ sys.path.insert(0, str(ROOT / "src"))
 # Схеме не нужны ни БД, ни секреты: конфиги читаются лениво, но логгер настраивается сразу.
 os.environ.setdefault("LOG_CONSOLE_LEVEL", "WARNING")
 
-from app.main import app  # noqa: E402
+from app.entrypoints.api import app  # noqa: E402
 
 
 def main() -> None:

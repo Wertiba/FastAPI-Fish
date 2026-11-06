@@ -4,7 +4,9 @@ from .api_exs import (
     Forbidden,
     MethodNotAllowed,
     NotFound,
+    ServiceUnavailable,
     Unauthorized,
+    UpgradeRequired,
     ValidationFailed,
 )
 from .base import APIException
@@ -16,6 +18,8 @@ __all__ = [
     "Forbidden",
     "MethodNotAllowed",
     "NotFound",
+    "ServiceUnavailable",
     "Unauthorized",
+    "UpgradeRequired",
     "ValidationFailed",
 ]

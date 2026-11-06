@@ -1,7 +1,12 @@
+from collections.abc import Callable
+from datetime import timedelta
+
+from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from httpx import Response
 
-from tests.conftest import ADMIN_EMAIL, USER_PASSWORD, RegisterUser
+from app.shared.domain.time import FrozenTime
+from tests.conftest import ADMIN_EMAIL, ADMIN_PASSWORD, USER_PASSWORD, RegisterUser, bearer, time_provider
 
 
 def post_with_refresh(client: TestClient, action: str, refresh_token: str) -> Response:
@@ -134,3 +139,21 @@ def test_admin_is_bootstrapped(client: TestClient, admin_headers: dict[str, str]
     me = client.get("/api/v1/users/me", headers=admin_headers).json()
     assert me["email"] == ADMIN_EMAIL
     assert me["role"] == "ADMIN"
+
+
+def test_tokens_expire_as_time_goes_by(make_app: Callable[..., FastAPI]) -> None:
+    """``FrozenTime`` instead of the clock: a month passes in a line, for refresh tokens and JWTs alike."""
+    time = FrozenTime()
+    with TestClient(make_app(time_provider(time)), base_url="https://testserver") as client:
+        login = client.post("/api/v1/auth/login", json={"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD})
+        access, refresh = bearer(login.json()["accessToken"]), login.cookies["refreshToken"]
+
+        time.advance(timedelta(minutes=16))  # access lives 15m
+        assert client.get("/api/v1/users/me", headers=access).status_code == 401
+        time.advance(timedelta(days=29))  # refresh lives 30d
+        renewed = post_with_refresh(client, "refresh", refresh)
+        assert renewed.status_code == 200
+        assert client.get("/api/v1/users/me", headers=bearer(renewed.json()["accessToken"])).status_code == 200
+
+        time.advance(timedelta(days=30, seconds=1))
+        assert post_with_refresh(client, "refresh", renewed.cookies["refreshToken"]).status_code == 401

@@ -6,11 +6,11 @@ and the architecture tests enforce it.
 
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Protocol
+from typing import ClassVar, Protocol
 
 from app.modules.users.domain.enums import UserRole
 from app.modules.users.domain.errors import UserAlreadyExistsError
-from app.shared.application.events import Event
+from app.shared.application.events import IntegrationEvent
 from app.shared.domain.ids import UserId
 
 __all__ = ["UserAlreadyExistsError", "UserDeactivated", "UserInfo", "UserRole", "UsersFacade"]
@@ -29,10 +29,19 @@ class UserInfo:
 
 
 @dataclass(frozen=True, kw_only=True)
-class UserDeactivated(Event):
-    """Published in the deactivating transaction; subscribers revoke what the user had."""
+class UserDeactivated(IntegrationEvent):
+    """Published in the deactivating transaction.
+
+    ``auth`` revokes sessions in that same transaction (``subscriptions``); the event also goes through
+    the outbox to the worker and Kafka, for reactions that may happen later (``consumers``).
+    """
+
+    topic: ClassVar[str] = "users.user.deactivated"
 
     user_id: UserId
+
+    def key(self) -> str:
+        return str(self.user_id)
 
 
 class UsersFacade(Protocol):

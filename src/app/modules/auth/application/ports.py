@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Any, Protocol
 
 from app.modules.auth.domain.refresh_token import RefreshToken
@@ -27,4 +28,8 @@ class RefreshTokenGateway(Protocol):
 
     async def delete_by_user(self, user_id: UserId) -> None:
         """Revokes every session of the user, in the current transaction."""
+        ...
+
+    async def delete_expired(self, now: datetime) -> int:
+        """Removes tokens that expired before ``now``; returns how many."""
         ...

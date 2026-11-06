@@ -28,4 +28,9 @@ class {{Plural}}Provider(Provider):
     provider={{Plural}}Provider,
     router=router,
     errors={{PLURAL}}_ERRORS,
+    # What else a module can plug into (see app/shared/module.py); add the classes to the provider too:
+    #   subscriptions={OtherModuleEvent: [Handler]},     same transaction as the publisher
+    #   consumers={OtherModuleIntegrationEvent: [Handler]},  later, in the worker (outbox -> Kafka)
+    #   jobs=[JobSpec(name="{{plural}}.daily", job=DailyJob, cron="0 3 * * *")],  scheduler process
+    #   bot_router=bot_router,                          aiogram Router, bot process
 )

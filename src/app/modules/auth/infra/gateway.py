@@ -1,4 +1,6 @@
-from sqlalchemy import delete, select
+from datetime import datetime
+
+from sqlalchemy import CursorResult, delete, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -36,3 +38,10 @@ class SqlAlchemyRefreshTokenGateway(RefreshTokenGateway):
             await self.session.execute(delete(refresh_tokens).where(refresh_tokens.c.user_id == user_id))
         except SQLAlchemyError as exc:
             raise ApplicationError("Database error") from exc
+
+    async def delete_expired(self, now: datetime) -> int:
+        try:
+            result = await self.session.execute(delete(refresh_tokens).where(refresh_tokens.c.expires_at < now))
+        except SQLAlchemyError as exc:
+            raise ApplicationError("Database error") from exc
+        return result.rowcount if isinstance(result, CursorResult) else 0

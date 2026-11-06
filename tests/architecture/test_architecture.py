@@ -6,8 +6,8 @@
 * Modules depend on each other without cycles.
 * Inside ``shared`` and every module: ``domain`` <- ``application`` <- ``infra`` / ``presentation``.
   ``api/contracts.py`` sits at the application level, ``api/http.py`` at the presentation level.
-* ``modules/<m>/module.py`` wires its module; only the composition root (``bootstrap``, ``main``,
-  ``run``) imports it.
+* ``modules/<m>/module.py`` wires its module; only the composition root (``bootstrap``, the
+  processes in ``entrypoints``, ``run``) imports it.
 """
 
 import ast
@@ -19,7 +19,7 @@ from pathlib import Path
 
 import pytest
 
-from app.main import app
+from app.entrypoints.api import app
 
 ROOT = Path(__file__).parents[2]
 SOURCE = ROOT / "src" / "app"
@@ -34,8 +34,15 @@ FRAMEWORKS = {
     "uvicorn",
     "alembic",
     "dishka",
+    "aiokafka",
+    "redis",
+    "aiogram",
+    "aiobotocore",
+    "botocore",
+    "httpx",
+    "croniter",
 }
-COMPOSITION_ROOT = ("app.bootstrap", "app.main", "app.run")
+COMPOSITION_ROOT = ("app.bootstrap", "app.entrypoints", "app.run")
 LAYERS = ("domain", "application", "infra", "presentation")
 MODULES = sorted(p.name for p in (SOURCE / "modules").iterdir() if (p / "module.py").exists())
 

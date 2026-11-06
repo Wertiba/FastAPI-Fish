@@ -1,9 +1,51 @@
+from collections.abc import Callable
 from os import environ as env
 
 from dishka import Provider, Scope, provide
+from pydantic import BaseModel
 
-from app.shared.infra.config import AdminConfig, DatabaseConfig, HttpConfig, LoggingConfig, RunConfig, SecurityConfig
+from app.shared.domain.time import TimeService
+from app.shared.infra.config import (
+    AdminConfig,
+    DatabaseConfig,
+    HttpConfig,
+    KafkaConfig,
+    LlmConfig,
+    LoggingConfig,
+    MobileConfig,
+    PushConfig,
+    RedisConfig,
+    RunConfig,
+    SecurityConfig,
+    StorageConfig,
+    TelegramConfig,
+    WorkerConfig,
+)
 from app.shared.infra.logger import Logger
+
+CONFIGS: tuple[type[BaseModel], ...] = (
+    RunConfig,
+    DatabaseConfig,
+    SecurityConfig,
+    AdminConfig,
+    HttpConfig,
+    LoggingConfig,
+    KafkaConfig,
+    WorkerConfig,
+    RedisConfig,
+    StorageConfig,
+    LlmConfig,
+    TelegramConfig,
+    PushConfig,
+    MobileConfig,
+)
+
+
+def _from_env[C: BaseModel](config_cls: type[C]) -> Callable[[], C]:
+    def read() -> C:
+        return config_cls.model_validate(env)
+
+    return read
 
 
 class ConfigProvider(Provider):
@@ -11,28 +53,10 @@ class ConfigProvider(Provider):
 
     scope = Scope.APP
 
-    @provide
-    def get_run(self) -> RunConfig:
-        return RunConfig.model_validate(env)
-
-    @provide
-    def get_database(self) -> DatabaseConfig:
-        return DatabaseConfig.model_validate(env)
-
-    @provide
-    def get_security(self) -> SecurityConfig:
-        return SecurityConfig.model_validate(env)
-
-    @provide
-    def get_admin(self) -> AdminConfig:
-        return AdminConfig.model_validate(env)
-
-    @provide
-    def get_http(self) -> HttpConfig:
-        return HttpConfig.model_validate(env)
-
-    @provide
-    def get_logging(self) -> LoggingConfig:
-        return LoggingConfig.model_validate(env)
+    def __init__(self) -> None:
+        super().__init__()
+        for config_cls in CONFIGS:
+            self.provide(_from_env(config_cls), provides=config_cls)
 
     logger = provide(Logger)
+    time = provide(TimeService)

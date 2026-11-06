@@ -30,5 +30,5 @@ USER app
 EXPOSE 8080
 
 ENTRYPOINT ["docker-entrypoint.sh"]
-# Access lines come from ObservabilityMiddleware (with trace id), so uvicorn's own are off.
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080", "--proxy-headers", "--no-access-log"]
+# One image, several processes: api (default), worker, scheduler, bot -- see app/run.py.
+CMD ["python", "-m", "app.run", "api"]

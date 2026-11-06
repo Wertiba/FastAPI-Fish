@@ -7,9 +7,9 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from app.shared.application.exceptions import ApplicationError, DuplicateError
+from app.shared.application.exceptions import ApplicationError, DuplicateError, ServiceUnavailableError
 from app.shared.domain.errors import EntityError
-from app.shared.presentation.http.errors import APIException, Conflict, MethodNotAllowed, NotFound
+from app.shared.presentation.http.errors import APIException, Conflict, MethodNotAllowed, NotFound, ServiceUnavailable
 from app.shared.presentation.http.errors.mapping import ErrorMap
 from app.shared.presentation.http.loc2field import loc_to_field, priority, rejected_value
 from app.shared.presentation.http.middleware.observability import request_log_context
@@ -52,6 +52,11 @@ def register_exception_handlers(app: FastAPI, error_map: ErrorMap) -> None:
     @app.exception_handler(DuplicateError)
     async def handle_duplicate(request: Request, exc: DuplicateError) -> JSONResponse:  # noqa: RUF029
         return _json(Conflict(path=request.url.path))
+
+    @app.exception_handler(ServiceUnavailableError)
+    async def handle_unavailable(request: Request, exc: ServiceUnavailableError) -> JSONResponse:  # noqa: RUF029
+        logger.warning("application_error", extra=request_log_context(request), exc_info=exc)
+        return _json(ServiceUnavailable(path=request.url.path))
 
     @app.exception_handler(ApplicationError)
     async def handle_application_error(request: Request, exc: ApplicationError) -> JSONResponse:  # noqa: RUF029

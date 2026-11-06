@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from datetime import UTC, datetime, timedelta
+from datetime import timedelta
 from typing import Any
 from uuid import UUID
 
@@ -18,6 +18,7 @@ from app.shared.application.exceptions import DuplicateError
 from app.shared.application.ports.unit_of_work import UnitOfWork
 from app.shared.domain.errors import InvalidCredentialsError
 from app.shared.domain.ids import UserId
+from app.shared.domain.time import TimeService
 
 
 def token_subject(payload: dict[str, Any]) -> UserId:
@@ -33,6 +34,7 @@ class _AuthContext:
     users: UsersFacade
     refresh_token_gateway: RefreshTokenGateway
     tokens: TokenService
+    time: TimeService
 
     async def _issue_refresh_token(self, user_id: UserId) -> RefreshCookie:
         refresh_token = self.tokens.create_refresh_token(str(user_id))
@@ -40,7 +42,7 @@ class _AuthContext:
         token = RefreshToken(
             user_id=user_id,
             token_hash=self.tokens.hash_token(refresh_token),
-            expires_at=datetime.now(UTC) + timedelta(seconds=max_age),
+            expires_at=self.time.after(timedelta(seconds=max_age)),
         )
         await self.uow.add(token)
         return RefreshCookie(token=refresh_token, max_age=max_age)
@@ -88,7 +90,7 @@ class RefreshTokens(_AuthContext):
         stored = await self.refresh_token_gateway.get_by_user_and_hash(
             user_id, self.tokens.hash_token(raw_refresh_token)
         )
-        if stored is None or stored.expires_at <= datetime.now(UTC):
+        if stored is None or self.time.is_past(stored.expires_at):
             raise InvalidCredentialsError
         user = await self.users.get(user_id)
         if user is None or not user.isActive:

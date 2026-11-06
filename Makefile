@@ -1,10 +1,24 @@
-.PHONY: install run test test-pg lint fmt typecheck check migrate migration module domain openapi lock up down
+.PHONY: install run run-api run-worker run-scheduler run-bot infra test test-pg lint fmt typecheck check migrate migration migration-sql module domain openapi lock up down
 
 install:            ## окружение .venv со всеми зависимостями (включая dev)
 	uv sync
 
-run:                ## локальный запуск (нужны src/.env и Postgres)
-	uv run --env-file src/.env python -m app.run
+run: run-api        ## локальный запуск API (нужны src/.env и Postgres)
+
+run-api:            ## FastAPI: сайт и мобильное приложение
+	uv run --env-file src/.env python -m app.run api
+
+run-worker:         ## outbox relay + консьюмеры (Kafka или локально)
+	uv run --env-file src/.env python -m app.run worker
+
+run-scheduler:      ## периодические задачи модулей
+	uv run --env-file src/.env python -m app.run scheduler
+
+run-bot:            ## Telegram long polling (нужен TELEGRAM_BOT_TOKEN)
+	uv run --env-file src/.env python -m app.run bot
+
+infra:              ## только инфраструктура в Docker (Postgres, Redis, Kafka, MinIO), процессы запускайте локально
+	docker compose up -d db redis kafka minio minio-bucket
 
 test:               ## тесты на in-memory SQLite
 	uv run pytest
@@ -28,8 +42,11 @@ check: lint typecheck test
 migrate:            ## применить миграции
 	uv run --env-file src/.env alembic -c src/alembic.ini upgrade head
 
-migration:          ## make migration m="add projects"
+migration:          ## автогенерация по tables.py: make migration m="add projects"
 	uv run --env-file src/.env alembic -c src/alembic.ini revision --autogenerate -m "$(m)"
+
+migration-sql:      ## миграция на чистом SQL (.up.sql / .down.sql): make migration-sql m="add projects"
+	uv run python scripts/new_sql_migration.py "$(m)"
 
 module:             ## make module name=projects [entity=Project]
 	uv run python scripts/new_module.py $(name) $(entity)

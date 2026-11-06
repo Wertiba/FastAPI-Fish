@@ -9,10 +9,10 @@ import logging
 import sys
 import traceback
 from contextvars import ContextVar
-from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID
 
+from app.shared.domain.time import TimeService
 from app.shared.infra.config import LoggingConfig
 
 # Set by the trace-id middleware; it only lets through ids matching a safe pattern.
@@ -27,9 +27,25 @@ _EVENTS = {
     "http_request_failed": "HTTP request failed",
     "unmapped_domain_error": "HTTP request raised an unmapped domain error",
     "application_error": "HTTP request raised an application error",
+    # Background processes: worker, scheduler, bot.
+    "process_started": "Process started",
+    "process_stopped": "Process stopped",
+    "outbox_relayed": "Outbox messages relayed to the broker",
+    "outbox_relay_failed": "Outbox relay failed; will retry",
+    "message_failed": "Consumer failed to handle a message; will retry",
+    "message_dead_lettered": "Consumer gave up on a message; it is marked failed in the inbox",
+    "job_completed": "Scheduled job completed",
+    "job_failed": "Scheduled job failed",
+    "job_skipped": "Scheduled job skipped: another instance holds its lock",
+    # Outgoing messages; their content is never logged.
+    "telegram_message_skipped": "Telegram is not configured; message not sent",
+    "telegram_chat_unavailable": "Telegram chat is unavailable (bot blocked or chat deleted)",
+    "push_skipped": "Push is not configured; notification not sent",
 }
 _UUID_FIELDS = frozenset({"user_id"})
-_FIELDS = frozenset({"http_method", "route", "status_code", "duration_ms"})
+_FIELDS = frozenset(
+    {"http_method", "route", "status_code", "duration_ms", "process_name", "job", "topic", "handler", "count"}
+)
 
 
 def _uuid(value: object) -> str | None:
@@ -51,7 +67,7 @@ class JsonFormatter(logging.Formatter):
             "env": self.config.env,
             "system": self.config.system,
             "inst": self.config.inst,
-            "@timestamp": datetime.fromtimestamp(record.created, UTC).isoformat(timespec="milliseconds"),
+            "@timestamp": TimeService.from_timestamp(record.created).isoformat(timespec="milliseconds"),
             "level": "WARN" if record.levelno == logging.WARNING else record.levelname,
             "logger": record.name,
             "event": event if known_event else "dependency_error",

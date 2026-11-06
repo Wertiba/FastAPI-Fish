@@ -11,7 +11,7 @@ from typing import Any
 
 import pytest
 
-from app.main import app
+from app.entrypoints.api import app
 
 FISH = json.loads((Path(__file__).parent / "fish_openapi.json").read_text(encoding="utf-8"))
 

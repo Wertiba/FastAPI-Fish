@@ -1,18 +1,19 @@
-from datetime import UTC, datetime
+from datetime import datetime
 from typing import Annotated
 
 from pydantic import BaseModel, ConfigDict, PlainSerializer, field_validator
 
+from app.shared.domain.time import TimeService, utc_now
+
 
 def format_utc(value: datetime) -> str:
     """``2026-01-02T03:04:05.678Z``"""
-    aware = value.replace(tzinfo=UTC) if value.tzinfo is None else value.astimezone(UTC)
-    return aware.isoformat(timespec="milliseconds").replace("+00:00", "Z")
+    return TimeService.to_iso(value)
 
 
 def timestamp_now() -> str:
     """``2026-01-02T03:04:05Z``: timestamp of an error body."""
-    return datetime.now(UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+    return TimeService.to_iso(utc_now(), timespec="seconds")
 
 
 UtcDatetime = Annotated[datetime, PlainSerializer(format_utc, return_type=str, when_used="json")]

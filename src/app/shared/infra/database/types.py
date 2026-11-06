@@ -1,11 +1,9 @@
-from datetime import UTC, datetime
+from datetime import datetime
 
 import sqlalchemy as sa
 from sqlalchemy.engine import Dialect
 
-
-def _as_aware_utc(value: datetime) -> datetime:
-    return value.replace(tzinfo=UTC) if value.tzinfo is None else value.astimezone(UTC)
+from app.shared.domain.time import TimeService
 
 
 class UtcDateTime(sa.TypeDecorator[datetime]):
@@ -15,7 +13,7 @@ class UtcDateTime(sa.TypeDecorator[datetime]):
     cache_ok = True
 
     def process_bind_param(self, value: datetime | None, dialect: Dialect) -> datetime | None:
-        return None if value is None else _as_aware_utc(value)
+        return None if value is None else TimeService.as_utc(value)
 
     def process_result_value(self, value: datetime | None, dialect: Dialect) -> datetime | None:
-        return None if value is None else _as_aware_utc(value)
+        return None if value is None else TimeService.as_utc(value)
