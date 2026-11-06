@@ -9,8 +9,8 @@ from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import create_async_engine
 
 from app.infra.config import DatabaseConfig, build_database_url
-from app.infra.database.mappings import metadata
-from app.infra.database.types import UtcDateTime
+from app.domain.base import UtcDateTime
+from app.infra.database.metadata import metadata
 from app.infra.di import ConfigProvider
 
 # this is the Alembic Config object, which provides

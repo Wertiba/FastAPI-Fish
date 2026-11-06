@@ -1,7 +1,11 @@
 from datetime import UTC, datetime
 from typing import Annotated
 
-from pydantic import BaseModel, ConfigDict, PlainSerializer, field_validator
+from pydantic import PlainSerializer
+
+from app.application.schema import PyModel
+
+__all__ = ["PyModel", "UtcDatetime", "format_utc", "timestamp_now"]
 
 
 def format_utc(value: datetime) -> str:
@@ -16,18 +20,3 @@ def timestamp_now() -> str:
 
 
 UtcDatetime = Annotated[datetime, PlainSerializer(format_utc, return_type=str, when_used="json")]
-
-
-class PyModel(BaseModel):
-    """Field names are the camelCase names of the API, so schemas need no aliases."""
-
-    model_config = ConfigDict(from_attributes=True, allow_inf_nan=False)
-
-    @field_validator("*")
-    @classmethod
-    def reject_nul(cls, value: object) -> object:
-        # Postgres text cannot hold NUL, so such input would fail in the database with a 500.
-        texts = value if isinstance(value, list) else [value]
-        if any(isinstance(text, str) and "\x00" in text for text in texts):
-            raise ValueError("text must not contain NUL characters")
-        return value

@@ -10,7 +10,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.application.users.interactors import EnsureAdmin
 from app.bootstrap import build_container
 from app.infra.config import AdminConfig, HttpConfig
-from app.infra.database.mappings import start_mappers
 from app.infra.logger import Logger
 from app.presentation.http.api import ops_router, v1_router
 from app.presentation.http.api.v1.exceptions.handlers import register_exception_handlers
@@ -33,7 +32,6 @@ async def _ensure_admin(container: AsyncContainer) -> None:
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     container: AsyncContainer = app.state.dishka_container
     try:
-        start_mappers()
         await _ensure_admin(container)
         logger.info("application_started")
         yield

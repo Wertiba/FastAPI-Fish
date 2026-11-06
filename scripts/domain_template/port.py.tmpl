@@ -1,15 +1,14 @@
 from typing import Protocol
+from uuid import UUID
 
 from app.domain.{{plural}}.entity import {{Entity}}
-from app.domain.{{plural}}.ids import {{Entity}}Id
-from app.domain.users.ids import UserId
 
 
 class {{Entity}}Gateway(Protocol):
-    async def get_by_id(self, id_: {{Entity}}Id) -> {{Entity}} | None: ...
+    async def get_by_id(self, id_: UUID) -> {{Entity}} | None: ...
 
-    async def get_all(self, offset: int, limit: int, *, owner_id: UserId | None = None) -> list[{{Entity}}]:
+    async def get_all(self, offset: int, limit: int, *, owner_id: UUID | None = None) -> list[{{Entity}}]:
         """Newest first; ``owner_id=None`` means every owner."""
         ...
 
-    async def count(self, *, owner_id: UserId | None = None) -> int: ...
+    async def count(self, *, owner_id: UUID | None = None) -> int: ...

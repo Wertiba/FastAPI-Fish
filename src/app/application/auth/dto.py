@@ -1,10 +1,17 @@
 from dataclasses import dataclass
 
+from app.domain.users.entity import User
+
 
 @dataclass(kw_only=True)
 class AccessTokenResult:
-    accessToken: str
-    expiresIn: int
+    access_token: str
+    expires_in: int
+
+
+@dataclass(kw_only=True)
+class AuthResult(AccessTokenResult):
+    user: User
 
 
 @dataclass(kw_only=True)

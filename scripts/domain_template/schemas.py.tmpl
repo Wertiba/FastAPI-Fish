@@ -1,37 +1,12 @@
-from typing import Annotated
 from uuid import UUID
 
-from pydantic import Field, field_validator
-
 from app.presentation.http.schemas.base import PyModel, UtcDatetime
-
-Title = Annotated[str, Field(min_length=1, max_length=200)]
-Description = Annotated[str | None, Field(max_length=2000)]
-
-
-class {{Entity}}CreateBody(PyModel):
-    title: Title
-    description: Description = None
-
-
-class {{Entity}}UpdateBody(PyModel):
-    """Only the fields present in the body change (PATCH)."""
-
-    title: Title | None = None
-    description: Description = None
-
-    @field_validator("title")
-    @classmethod
-    def title_not_null(cls, value: str | None) -> str:
-        if value is None:
-            raise ValueError("title cannot be null")
-        return value
 
 
 class {{Entity}}ReadResponse(PyModel):
     id: UUID
-    ownerId: UUID
+    owner_id: UUID
     title: str
     description: str | None
-    createdAt: UtcDatetime
-    updatedAt: UtcDatetime
+    created_at: UtcDatetime
+    updated_at: UtcDatetime

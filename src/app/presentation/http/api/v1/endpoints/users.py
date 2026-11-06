@@ -9,13 +9,13 @@ from fastapi import APIRouter, Depends, Query, Response, status
 
 from app.application.pagination import Pagination
 from app.application.ports.user_gateway import UserCriteria
-from app.application.users.dto import UserCreateData, UserUpdateData
 from app.application.users.interactors import CreateUser, DeactivateUser, GetMe, GetUser, ListUsers, UpdateUser
+from app.application.users.schemas import AdminRegisterUserBody, UserUpdateBody
 from app.domain.users.enums import UserRole
 from app.infra.metrics import track
 from app.presentation.http.api.v1.dependencies import CurrentUserDep, PaginationDep
 from app.presentation.http.paginated import Page
-from app.presentation.http.schemas.user import AdminRegisterUserBody, UserReadResponse, UserUpdateBody
+from app.presentation.http.schemas.user import UserReadResponse
 
 router = APIRouter(prefix="/users", tags=["Users"], route_class=DishkaRoute)
 
@@ -54,7 +54,7 @@ async def get_all(
 async def create(
     user: CurrentUserDep, interactor: FromDishka[CreateUser], user_data: AdminRegisterUserBody, response: Response
 ) -> UserReadResponse:
-    created = await interactor(user.id, UserCreateData(**user_data.model_dump()))
+    created = await interactor(user.id, user_data)
     track("user", "created")
     response.headers["Location"] = f"/api/v1/users/{created.id}"
     return UserReadResponse.model_validate(created, from_attributes=True)
@@ -69,7 +69,7 @@ async def get_me(user: CurrentUserDep, interactor: FromDishka[GetMe]) -> UserRea
 async def update_me(
     user: CurrentUserDep, interactor: FromDishka[UpdateUser], new_data: UserUpdateBody
 ) -> UserReadResponse:
-    updated = await interactor(user.id, user.id, UserUpdateData(**new_data.model_dump()))
+    updated = await interactor(user.id, user.id, new_data)
     return UserReadResponse.model_validate(updated, from_attributes=True)
 
 
@@ -82,7 +82,7 @@ async def get_by_id(user: CurrentUserDep, user_id: UUID, interactor: FromDishka[
 async def update_by_id(
     user: CurrentUserDep, user_id: UUID, interactor: FromDishka[UpdateUser], new_data: UserUpdateBody
 ) -> UserReadResponse:
-    updated = await interactor(user.id, user_id, UserUpdateData(**new_data.model_dump()))
+    updated = await interactor(user.id, user_id, new_data)
     return UserReadResponse.model_validate(updated, from_attributes=True)
 
 

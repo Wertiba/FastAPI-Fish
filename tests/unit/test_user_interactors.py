@@ -6,8 +6,8 @@ from uuid import UUID, uuid4
 import pytest
 
 from app.application.ports.user_gateway import UserCriteria
-from app.application.users.dto import UserUpdateData
 from app.application.users.interactors import DeactivateUser, UpdateUser
+from app.application.users.schemas import UserUpdateBody
 from app.domain.refresh_tokens.entity import RefreshToken
 from app.domain.users.entity import User
 from app.domain.users.enums import UserRole
@@ -78,20 +78,20 @@ class TestUpdateUser:
         user = make_user()
         ctx = Context(user)
 
-        result = await ctx.build(UpdateUser)(user.id, user.id, UserUpdateData(fullName="New"))
+        result = await ctx.build(UpdateUser)(user.id, user.id, UserUpdateBody(full_name="New"))
 
-        assert result.fullName == user.full_name == "New"
+        assert result.full_name == user.full_name == "New"
         assert ctx.uow.committed
         assert ctx.tokens.revoked == []
 
     @pytest.mark.parametrize(
         "data",
         [
-            UserUpdateData(fullName="X", role=UserRole.ADMIN),
-            UserUpdateData(fullName="X", isActive=False),
+            UserUpdateBody(full_name="Xx", role=UserRole.ADMIN),
+            UserUpdateBody(full_name="Xx", is_active=False),
         ],
     )
-    async def test_user_cannot_change_own_role_or_status(self, data: UserUpdateData) -> None:
+    async def test_user_cannot_change_own_role_or_status(self, data: UserUpdateBody) -> None:
         user = make_user()
         ctx = Context(user)
 
@@ -102,20 +102,20 @@ class TestUpdateUser:
 
     async def test_sending_current_values_is_allowed_for_user(self) -> None:
         user = make_user()
-        data = UserUpdateData(fullName="X", role=UserRole.USER, isActive=True)
+        data = UserUpdateBody(full_name="Xx", role=UserRole.USER, is_active=True)
 
         await Context(user).build(UpdateUser)(user.id, user.id, data)
 
     async def test_user_cannot_update_others(self) -> None:
         alice, bob = make_user(), make_user()
         with pytest.raises(ForbiddenError):
-            await Context(alice, bob).build(UpdateUser)(alice.id, bob.id, UserUpdateData(fullName="X"))
+            await Context(alice, bob).build(UpdateUser)(alice.id, bob.id, UserUpdateBody(full_name="Xx"))
 
     async def test_admin_deactivation_revokes_sessions(self) -> None:
         admin, user = make_user(UserRole.ADMIN), make_user()
         ctx = Context(admin, user)
 
-        await ctx.build(UpdateUser)(admin.id, user.id, UserUpdateData(fullName="X", isActive=False))
+        await ctx.build(UpdateUser)(admin.id, user.id, UserUpdateBody(full_name="Xx", is_active=False))
 
         assert user.is_active is False
         assert ctx.tokens.revoked == [user.id]

@@ -2,6 +2,9 @@
 
 ``domain`` <- ``application`` <- ``infra`` / ``presentation``; ``bootstrap.py``, ``main.py`` and ``run.py``
 are the composition root and may import anything.
+
+Hybrid trade-off: an entity is a declarative SQLAlchemy model (``domain`` may import ``sqlalchemy``), and
+use case inputs are Pydantic models (``application`` may import ``pydantic``). Every other framework stays out.
 """
 
 import ast
@@ -27,6 +30,7 @@ FRAMEWORKS = {
     "alembic",
 }
 COMPOSITION_ROOT = ("app.bootstrap", "app.main", "app.run")
+ALLOWED_FRAMEWORKS = {"domain": {"sqlalchemy"}, "application": {"pydantic"}}
 
 
 def _imports(path: Path) -> Iterator[str]:
@@ -49,7 +53,7 @@ def test_inner_layers_do_not_import_frameworks_or_outer_layers(layer: str) -> No
     for path in _files(layer):
         for module in _imports(path):
             relative = path.relative_to(SOURCE)
-            if module.split(".")[0] in FRAMEWORKS:
+            if module.split(".")[0] in FRAMEWORKS - ALLOWED_FRAMEWORKS[layer]:
                 violations.append(f"{relative} -> {module}")
             if module.startswith(("app.infra", "app.presentation", *COMPOSITION_ROOT)):
                 violations.append(f"{relative} -> {module}")

@@ -5,8 +5,9 @@
     make domain name=projects                                # то же через make
 
 Создаёт файлы домена в каждом слое (domain / application / infra / presentation), e2e-тест
-``tests/api/test_<domain>_endpoints.py`` и регистрирует домен в общих точках сборки: таблица и
-маппер, ``UnitOfWork.Entity``, gateway-провайдер, провайдер интеракторов, роутер, маппинг ошибок.
+``tests/api/test_<domain>_endpoints.py`` и регистрирует домен в общих точках сборки: модель в
+``metadata.py`` (для Alembic), gateway-провайдер, провайдер интеракторов, роутер, маппинг ошибок.
+Поля сущности описаны в модели (она же таблица), во входных схемах application и в схеме ответа.
 Дальше — миграция и ваша предметная логика.
 """
 
@@ -23,7 +24,7 @@ APP = ROOT / "src" / "app"
 
 NAME_RE = re.compile(r"^[a-z][a-z0-9_]*$")
 ENTITY_RE = re.compile(r"^[A-Z][A-Za-z0-9]*$")
-RESERVED = {"users", "auth", "refresh_tokens", "health", "metrics", "metadata", "mapper_registry", "errors"}
+RESERVED = {"users", "auth", "refresh_tokens", "health", "metrics", "metadata", "base", "schema", "ports", "errors"}
 
 
 def camel(snake_name: str) -> str:
@@ -74,24 +75,16 @@ def register(ctx: dict[str, str]) -> list[Path]:
     plural, entity, entity_cls = ctx["plural"], ctx["entity"], ctx["Entity"]
     imp_domain = f"from app.domain.{plural}.entity import {entity_cls}\n"
     paths = {
-        "mappings": APP / "infra" / "database" / "mappings.py",
-        "uow": APP / "application" / "ports" / "unit_of_work.py",
+        "metadata": APP / "infra" / "database" / "metadata.py",
         "gateways": APP / "infra" / "gateways" / "di.py",
         "bootstrap": APP / "bootstrap.py",
         "routers": APP / "presentation" / "http" / "api" / "v1" / "endpoints" / "__init__.py",
         "exc_map": APP / "presentation" / "http" / "api" / "v1" / "exceptions" / "exc_map.py",
     }
 
-    def mappings(src: str, path: Path) -> str:
+    def metadata(src: str, path: Path) -> str:
         src = insert_after_last(src, r"^from app\.domain\..+\n", imp_domain, path)
-        table = render((TEMPLATE / "table.py.tmpl").read_text(encoding="utf-8"), ctx)
-        src = insert_before(src, "\n\ndef start_mappers", table, path)
-        mapper = f"    mapper_registry.map_imperatively({entity_cls}, {plural})\n"
-        return insert_before(src, "\n\nstart_mappers()", mapper, path, last=True)
-
-    def uow(src: str, path: Path) -> str:
-        src = insert_after_last(src, r"^from app\.domain\..+\n", imp_domain, path)
-        return re.sub(r"^(type Entity = .+)$", rf"\1 | {entity_cls}", src, count=1, flags=re.M)
+        return re.sub(r"^__all__ = \[", f'__all__ = ["{entity_cls}", ', src, count=1, flags=re.M)
 
     def gateways(src: str, path: Path) -> str:
         src = insert_after_last(
@@ -125,8 +118,7 @@ def register(ctx: dict[str, str]) -> list[Path]:
         return insert_before(src, "}\n", entry, path, last=True)
 
     for name, edit in (
-        ("mappings", mappings),
-        ("uow", uow),
+        ("metadata", metadata),
         ("gateways", gateways),
         ("bootstrap", bootstrap),
         ("routers", routers),
@@ -165,9 +157,8 @@ def main() -> None:
     targets = {
         "domain_entity.py.tmpl": APP / "domain" / plural / "entity.py",
         "domain_errors.py.tmpl": APP / "domain" / plural / "errors.py",
-        "domain_ids.py.tmpl": APP / "domain" / plural / "ids.py",
         "port.py.tmpl": APP / "application" / "ports" / f"{entity}_gateway.py",
-        "app_dto.py.tmpl": APP / "application" / plural / "dto.py",
+        "app_schemas.py.tmpl": APP / "application" / plural / "schemas.py",
         "app_interactors.py.tmpl": APP / "application" / plural / "interactors.py",
         "app_di.py.tmpl": APP / "application" / plural / "di.py",
         "gateway.py.tmpl": APP / "infra" / "gateways" / f"{entity}.py",

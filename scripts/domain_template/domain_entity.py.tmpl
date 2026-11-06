@@ -1,20 +1,18 @@
-from dataclasses import dataclass, field
-from datetime import UTC, datetime
-from uuid import uuid4
+from datetime import datetime
+from uuid import UUID, uuid4
 
-from app.domain.{{plural}}.ids import {{Entity}}Id
-from app.domain.users.ids import UserId
+from sqlalchemy import ForeignKey, String
+from sqlalchemy.orm import Mapped, mapped_column
 
-
-def _now() -> datetime:
-    return datetime.now(UTC)
+from app.domain.base import Base, utc_now
 
 
-@dataclass(eq=False, kw_only=True)
-class {{Entity}}:
-    id: {{Entity}}Id = field(default_factory=uuid4)
-    owner_id: UserId
-    title: str
-    description: str | None = None
-    created_at: datetime = field(default_factory=_now)
-    updated_at: datetime = field(default_factory=_now)
+class {{Entity}}(Base, kw_only=True):
+    __tablename__ = "{{plural}}"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, default_factory=uuid4)
+    owner_id: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    title: Mapped[str] = mapped_column(String(200))
+    description: Mapped[str | None] = mapped_column(String(2000), default=None)
+    created_at: Mapped[datetime] = mapped_column(default_factory=utc_now)
+    updated_at: Mapped[datetime] = mapped_column(default_factory=utc_now)

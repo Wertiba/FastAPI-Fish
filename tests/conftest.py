@@ -41,7 +41,7 @@ from sqlalchemy.pool import StaticPool  # noqa: E402
 
 from app.bootstrap import build_container  # noqa: E402
 from app.infra.database.db_helper import DatabaseHelper  # noqa: E402
-from app.infra.database.mappings import metadata  # noqa: E402
+from app.infra.database.metadata import metadata  # noqa: E402
 from app.main import create_app  # noqa: E402
 
 TEST_DB_URL = os.getenv("TEST_DB_URL", "sqlite+aiosqlite:///:memory:")

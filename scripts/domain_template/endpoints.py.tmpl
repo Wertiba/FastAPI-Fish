@@ -4,7 +4,6 @@ from dishka.integrations.fastapi import DishkaRoute, FromDishka
 from fastapi import APIRouter, Response, status
 
 from app.application.pagination import Pagination
-from app.application.{{plural}}.dto import {{Entity}}CreateData, {{Entity}}UpdateData
 from app.application.{{plural}}.interactors import (
     Create{{Entity}},
     Delete{{Entity}},
@@ -12,10 +11,11 @@ from app.application.{{plural}}.interactors import (
     List{{Plural}},
     Update{{Entity}},
 )
+from app.application.{{plural}}.schemas import {{Entity}}CreateBody, {{Entity}}UpdateBody
 from app.infra.metrics import track
 from app.presentation.http.api.v1.dependencies import CurrentUserDep, PaginationDep
 from app.presentation.http.paginated import Page
-from app.presentation.http.schemas.{{entity}} import {{Entity}}CreateBody, {{Entity}}ReadResponse, {{Entity}}UpdateBody
+from app.presentation.http.schemas.{{entity}} import {{Entity}}ReadResponse
 
 router = APIRouter(prefix="/{{url}}", tags=["{{Tag}}"], route_class=DishkaRoute)
 
@@ -32,7 +32,7 @@ async def get_{{plural}}(
 async def create_{{entity}}(
     user: CurrentUserDep, interactor: FromDishka[Create{{Entity}}], body: {{Entity}}CreateBody, response: Response
 ) -> {{Entity}}ReadResponse:
-    created = await interactor(user.id, {{Entity}}CreateData(**body.model_dump()))
+    created = await interactor(user.id, body)
     track("{{entity}}", "created")
     response.headers["Location"] = f"/api/v1/{{url}}/{created.id}"
     return {{Entity}}ReadResponse.model_validate(created, from_attributes=True)
@@ -49,8 +49,7 @@ async def get_{{entity}}(
 async def update_{{entity}}(
     user: CurrentUserDep, {{entity}}_id: UUID, interactor: FromDishka[Update{{Entity}}], body: {{Entity}}UpdateBody
 ) -> {{Entity}}ReadResponse:
-    data = {{Entity}}UpdateData(changes=body.model_dump(exclude_unset=True))
-    return {{Entity}}ReadResponse.model_validate(await interactor(user.id, {{entity}}_id, data), from_attributes=True)
+    return {{Entity}}ReadResponse.model_validate(await interactor(user.id, {{entity}}_id, body), from_attributes=True)
 
 
 @router.delete("/{{{entity}}_id}", response_model=None, status_code=status.HTTP_204_NO_CONTENT)

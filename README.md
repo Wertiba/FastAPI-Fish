@@ -1,7 +1,9 @@
 # FastAPI-Fish
 
-Шаблон бэкенда на FastAPI в стиле **чистой архитектуры** со слоями
+Шаблон бэкенда на FastAPI в стиле **гибридной чистой архитектуры** со слоями
 `domain → application → infra / presentation`: Dishka DI, JWT-аутентификация, CRUD пользователей.
+Гибрид: зависимости направлены внутрь, как в чистой архитектуре, но сущность — сразу декларативная
+модель SQLAlchemy, а входы use case — Pydantic-схемы. Поэтому поле описывается в 3–4 местах, а не в 15.
 Структура повторяет бэкенд [PetCare](https://github.com/Wertiba/PetCare-PROD-Hackathon-2026),
 а API — [FastAPI-Fish](https://github.com/Wertiba/FastAPI-Fish) (контракт закреплён тестом).
 
@@ -56,29 +58,31 @@ src/app/
 ├── main.py              create_app(): middleware, роутеры, обработчики ошибок, lifespan; app = create_app()
 ├── bootstrap.py         build_container(): все Dishka-провайдеры — единственное место сборки
 ├── run.py               python -m app.run (локальный запуск)
-├── domain/              сущности (dataclass'ы) и доменные ошибки, только stdlib
+├── domain/              сущности = декларативные модели SQLAlchemy (они же таблицы) и доменные ошибки
+│   ├── base.py          Base (MappedAsDataclass), UtcDateTime, str_enum, naming convention
 │   ├── errors.py        EntityError — база доменных ошибок
-│   ├── users/           entity.py, enums.py, errors.py, ids.py
+│   ├── users/           entity.py, enums.py, errors.py
 │   └── refresh_tokens/
-├── application/         сценарии; без FastAPI, SQLAlchemy и infra
+├── application/         сценарии; без FastAPI и infra (SQLAlchemy — только через модели domain)
 │   ├── ports/           Protocol'ы: *_gateway.py, unit_of_work.py, tokens.py, database_health.py
-│   ├── auth/            interactors.py, dto.py, di.py
-│   ├── users/           interactors.py, dto.py, access.py (require_admin…), di.py
+│   ├── auth/            interactors.py, dto.py (результаты с токенами), di.py
+│   ├── users/           interactors.py, schemas.py (входы = тела запросов), password.py, access.py, di.py
+│   ├── schema.py        PyModel: поля snake_case, в JSON и OpenAPI — camelCase-алиасы
 │   ├── pagination.py, changes.py, exceptions.py
 ├── infra/               реализации портов
 │   ├── config.py, di.py конфиги из окружения (RunConfig, DatabaseConfig, SecurityConfig…) и их провайдер
-│   ├── database/        mappings.py (таблицы + imperative mapping), unit_of_work.py, db_helper.py, health.py
+│   ├── database/        metadata.py (импорт всех моделей для Alembic), unit_of_work.py, db_helper.py, health.py
 │   ├── gateways/        SqlAlchemy*Gateway + GatewayProvider
 │   ├── security/        JWTService: JWT, argon2, хеш refresh-токена
 │   ├── logger.py, metrics.py, duration.py
 └── presentation/http/
     ├── api/endpoints/   health, metrics (вне /api)
     ├── api/v1/          endpoints/, dependencies/ (CurrentUserDep, PaginationDep), exceptions/, utils/cookies.py
-    ├── schemas/         Pydantic-схемы запросов и ответов (имена полей = camelCase API)
+    ├── schemas/         схемы ответов (UserReadResponse…) и ошибок
     ├── middleware/      trace_id.py (X-Trace-Id + 500), observability.py (метрики + access-лог)
-    └── paginated.py, loc2field.py, password.py
+    └── paginated.py, loc2field.py
 
-src/alembic.ini, src/alembic/   миграции; env.py берёт DatabaseConfig и metadata из infra
+src/alembic.ini, src/alembic/   миграции; env.py берёт DatabaseConfig и metadata из infra/database/metadata.py
 ```
 
 Зависимости направлены внутрь. Правила проверяет `tests/architecture/test_architecture.py`,
@@ -86,8 +90,8 @@ src/alembic.ini, src/alembic/   миграции; env.py берёт DatabaseConf
 
 | Слой | Можно импортировать |
 |---|---|
-| `domain` | stdlib и сам `domain` |
-| `application` | `domain`, `application`; `dishka` — только в `application/*/di.py` |
+| `domain` | stdlib, `sqlalchemy` (декларативные модели) и сам `domain` |
+| `application` | `domain`, `application`, `pydantic`; `dishka` — только в `application/*/di.py` |
 | `infra` | `domain`, `application`, `infra` (не `presentation`) |
 | `presentation` | всё, кроме composition root (`bootstrap.py`, `main.py`, `run.py`) |
 
@@ -106,10 +110,9 @@ uv run pytest tests/api/test_projects_endpoints.py
 обновляется. Дальше вы переделываете сущность под свою предметную область.
 
 Ручной путь (если генератор не подходит):
-1. `domain/<x>/`: `entity.py` (dataclass), `errors.py` (наследники `EntityError`), `ids.py`.
-2. `application/ports/<x>_gateway.py` и `application/<x>/`: `dto.py`, `interactors.py`, `di.py`.
-3. `infra/database/mappings.py`: таблица + `map_imperatively`; добавьте сущность в `Entity`
-   (`application/ports/unit_of_work.py`).
+1. `domain/<x>/`: `entity.py` (модель `class X(Base, kw_only=True)`), `errors.py` (наследники `EntityError`).
+2. `application/ports/<x>_gateway.py` и `application/<x>/`: `schemas.py`, `interactors.py`, `di.py`.
+3. Импорт модели в `infra/database/metadata.py`, чтобы Alembic увидел таблицу.
 4. `infra/gateways/<x>.py` + строка в `infra/gateways/di.py`.
 5. `presentation/http/schemas/<x>.py`, `presentation/http/api/v1/endpoints/<x>.py` + `include_router`
    в `endpoints/__init__.py`; ошибки → `exceptions/exc_map.py`.
@@ -130,14 +133,18 @@ class _UserContext:
     ...
 
 class CreateUser(_UserContext):
-    async def __call__(self, user_id: UserId, data: UserCreateData) -> UserResult:
+    async def __call__(self, user_id: UUID, data: AdminRegisterUserBody) -> User:
         await require_admin(self.user_gateway, user_id)   # роль читается из БД -> 403
-        user = User(email=data.email, ...)
+        user = User(**data.model_dump(exclude={"password"}), password_hash=..., created_by=user_id)
         await self.uow.add(user)
-        result = to_user_result(user)
         await self.uow.commit()                            # DuplicateError -> 409
-        return result
+        return user
 ```
+
+Интерактор принимает Pydantic-схему (она же тело запроса) и возвращает модель. JSON собирает
+`response_model` эндпоинта через `from_attributes`, так что перекладывать поля в DTO не нужно.
+Имена полей схем совпадают с полями модели (snake_case), а наружу видны camelCase-алиасы:
+`full_name` в коде — `fullName` в API.
 
 **Транзакция** одна на HTTP-запрос: все gateways и `UnitOfWork` работают в одной сессии.
 Без `commit()` изменения откатятся.
@@ -147,9 +154,10 @@ class CreateUser(_UserContext):
 из `api_exs.py`) с нужным статусом и `code`. `DuplicateError` из `UnitOfWork.commit()` → 409,
 прочие `ApplicationError` → 500 с записью в лог, ошибка без маппинга → 500 и `unmapped_domain_error`.
 
-**Таблицы** описываются через `Table` в `infra/database/mappings.py` и привязываются к
-dataclass-сущностям через imperative mapping. В домене нет SQLAlchemy, а ORM всё равно отслеживает
-изменения: изменили поле сущности, вызвали `commit()`, и изменение сохранилось.
+**Сущность = таблица**: модель в `domain/<x>/entity.py` наследует `Base` (`MappedAsDataclass`),
+поэтому её можно создать без сессии (так работают unit-тесты на фейках), а ORM отслеживает изменения:
+изменили поле, вызвали `commit()`, изменение сохранилось. Новое поле — это модель, миграция, нужные
+входные схемы и схема ответа.
 
 **Логи**: `logger.info("event_name", extra={...})`, где событие и его поля заранее перечислены в
 `infra/logger.py`. Свободный текст и данные запросов в лог не попадают.

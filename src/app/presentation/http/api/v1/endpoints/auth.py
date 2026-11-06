@@ -8,13 +8,13 @@ from dishka.integrations.fastapi import DishkaRoute, FromDishka
 from fastapi import APIRouter, Request, Response, status
 
 from app.application.auth.interactors import LoginUser, Logout, RefreshTokens, RegisterUser
-from app.application.users.dto import UserLoginData, UserRegisterData
+from app.application.users.schemas import UserLoginBody, UserRegisterBody
 from app.domain.users.errors import InvalidCredentialsError
 from app.infra.config import HttpConfig
 from app.infra.metrics import track
 from app.presentation.http.api.v1.utils.cookies import REFRESH_COOKIE_NAME, delete_refresh_cookie, set_refresh_cookie
 from app.presentation.http.schemas.token import AccessTokenResponse
-from app.presentation.http.schemas.user import UserAndAccessTokenResponse, UserLoginBody, UserRegisterBody
+from app.presentation.http.schemas.user import UserAndAccessTokenResponse
 
 router = APIRouter(prefix="/auth", tags=["Auth"], route_class=DishkaRoute)
 
@@ -26,7 +26,7 @@ async def register(
     user_data: UserRegisterBody,
     response: Response,
 ) -> UserAndAccessTokenResponse:
-    result, cookie = await interactor(UserRegisterData(**user_data.model_dump()))
+    result, cookie = await interactor(user_data)
     track("user", "registered")
     set_refresh_cookie(response, cookie.token, max_age_seconds=cookie.max_age, config=config)
     response.headers["Location"] = f"/api/v1/users/{result.user.id}"
@@ -38,7 +38,7 @@ async def login(
     interactor: FromDishka[LoginUser], config: FromDishka[HttpConfig], user_data: UserLoginBody, response: Response
 ) -> UserAndAccessTokenResponse:
     try:
-        result, cookie = await interactor(UserLoginData(**user_data.model_dump()))
+        result, cookie = await interactor(user_data)
     except InvalidCredentialsError:
         track("user", "login_failed")
         raise

@@ -2,17 +2,18 @@ from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.application.exceptions import ApplicationError, DuplicateError
-from app.application.ports.unit_of_work import Entity, UnitOfWork
+from app.application.ports.unit_of_work import UnitOfWork
+from app.domain.base import Base
 
 
 class SqlAlchemyUnitOfWork(UnitOfWork):
     def __init__(self, session: AsyncSession) -> None:
         self.session = session
 
-    async def add(self, entity: Entity) -> None:
+    async def add(self, entity: Base) -> None:
         self.session.add(entity)
 
-    async def delete(self, entity: Entity) -> None:
+    async def delete(self, entity: Base) -> None:
         try:
             await self.session.delete(entity)
         except SQLAlchemyError as exc:

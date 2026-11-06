@@ -1,10 +1,10 @@
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Protocol
+from uuid import UUID
 
 from app.domain.users.entity import User
 from app.domain.users.enums import UserRole
-from app.domain.users.ids import UserId
 
 
 @dataclass(kw_only=True)
@@ -18,7 +18,7 @@ class UserCriteria:
 
 
 class UserGateway(Protocol):
-    async def get_by_id(self, id_: UserId) -> User | None: ...
+    async def get_by_id(self, id_: UUID) -> User | None: ...
 
     async def get_by_email(self, email: str) -> User | None: ...
 
