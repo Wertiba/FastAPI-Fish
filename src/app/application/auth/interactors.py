@@ -72,8 +72,11 @@ class RegisterUser(_AuthContext):
         )
         user.created_by = user.id
         await self.uow.add(user)
-        result = await self._issue_token_pair(user)
         try:
+            # User and RefreshToken share no ORM relationship, so SQLAlchemy cannot order their INSERTs:
+            # flush the user first so the refresh token's FK to it holds.
+            await self.uow.flush()
+            result = await self._issue_token_pair(user)
             await self.uow.commit()
         except DuplicateError:
             raise UserAlreadyExistsError(email=user_data.email) from None

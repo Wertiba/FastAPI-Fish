@@ -37,7 +37,7 @@ from dishka import Provider, Scope, provide  # noqa: E402
 from fastapi import FastAPI  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine  # noqa: E402
-from sqlalchemy.pool import StaticPool  # noqa: E402
+from sqlalchemy.pool import NullPool, StaticPool  # noqa: E402
 
 from app.bootstrap import build_container  # noqa: E402
 from app.infra.database.db_helper import DatabaseHelper  # noqa: E402
@@ -52,7 +52,9 @@ async def db_session_factory() -> AsyncIterator[async_sessionmaker[AsyncSession]
     if TEST_DB_URL.startswith("sqlite"):
         engine = create_async_engine(TEST_DB_URL, poolclass=StaticPool, connect_args={"check_same_thread": False})
     else:
-        engine = create_async_engine(TEST_DB_URL)
+        # NullPool: TestClient runs the app in its own event loop, and a pooled asyncpg connection
+        # opened in the fixture's loop fails there ("attached to a different loop").
+        engine = create_async_engine(TEST_DB_URL, poolclass=NullPool)
     async with engine.begin() as conn:
         await conn.run_sync(metadata.create_all)
     yield async_sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
