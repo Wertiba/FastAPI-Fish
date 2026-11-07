@@ -7,6 +7,7 @@ from app.modules.users.application.ports import PasswordHasher, UserGateway
 from app.modules.users.domain.entity import User
 from app.modules.users.domain.enums import UserRole
 from app.modules.users.domain.errors import UserAlreadyExistsError
+from app.shared.application.exceptions import DuplicateError
 from app.shared.application.ports.unit_of_work import UnitOfWork
 from app.shared.domain.ids import UserId
 
@@ -44,6 +45,12 @@ class UsersFacadeImpl(UsersFacade):
         )
         user.created_by = user.id
         await self.uow.add(user)
+        # Modules share no ORM relationships, so SQLAlchemy cannot order INSERTs across them:
+        # flush now so rows of other modules (e.g. refresh tokens) can reference the user by FK.
+        try:
+            await self.uow.flush()
+        except DuplicateError:
+            raise UserAlreadyExistsError(email=email) from None
         return to_user_info(user)
 
     async def is_admin(self, user_id: UserId) -> bool:

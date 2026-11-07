@@ -59,6 +59,9 @@ class FakeUnitOfWork:
     async def delete(self, entity: Any) -> None:
         pass
 
+    async def flush(self) -> None:
+        pass
+
     async def commit(self) -> None:
         self.committed = True
 

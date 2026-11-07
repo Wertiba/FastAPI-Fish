@@ -18,6 +18,14 @@ class SqlAlchemyUnitOfWork(UnitOfWork):
         except SQLAlchemyError as exc:
             raise ApplicationError("Database error") from exc
 
+    async def flush(self) -> None:
+        try:
+            await self.session.flush()
+        except IntegrityError as exc:
+            raise DuplicateError("Unique field already exists") from exc
+        except SQLAlchemyError as exc:
+            raise ApplicationError("Database error") from exc
+
     async def commit(self) -> None:
         try:
             await self.session.commit()
